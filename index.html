@@ -6670,6 +6670,27 @@ async function refreshCloudSession(){
   let data=await r.json();if(!r.ok)throw Error(data.message||data.error_description||'No se pudo renovar la sesión');
   safeStorage.set('pp_cloud_session',JSON.stringify(data));return data;
 }
+// Une dos listas evitando duplicados (por id si existe, o por contenido).
+function _mergeArrays(a,b){
+  a=Array.isArray(a)?a:[];b=Array.isArray(b)?b:[];
+  let seen=new Set(),out=[];
+  let keyOf=x=>(x&&typeof x==='object'&&x.id!=null)?('id:'+x.id):('j:'+JSON.stringify(x));
+  for(let item of a.concat(b)){let k=keyOf(item);if(!seen.has(k)){seen.add(k);out.push(item);}}
+  return out;
+}
+// Fusión NO destructiva de estado local y de la nube: nunca se pierden datos.
+// Las listas se unen; para valores sueltos/objetos gana la copia más reciente.
+function mergeCloudStates(local,remote){
+  local=local||{};remote=remote||{};
+  let lt=Date.parse(local.lastModified||0)||0, rt=Date.parse(remote.lastModified||remote.updated_at||0)||0;
+  let base = lt>=rt ? {...remote,...local} : {...local,...remote};
+  let keys=new Set([...Object.keys(local),...Object.keys(remote)]);
+  for(let k of keys){
+    if(Array.isArray(local[k])||Array.isArray(remote[k])) base[k]=_mergeArrays(local[k],remote[k]);
+  }
+  base.lastModified=new Date().toISOString();
+  return base;
+}
 async function cloudStartupSync(){
   if(!navigator.onLine||!getCloudSession())return;
   try{
@@ -6678,11 +6699,11 @@ async function cloudStartupSync(){
     let rows=await cloudRest('personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at');
     let remote=rows&&rows[0];
     if(!remote){await cloudSave(true);return}
-    let localTime=Date.parse(state.lastModified||0)||0,remoteTime=Date.parse(remote.data?.lastModified||remote.updated_at||0)||0;
-    if(remoteTime>localTime && !(state.offlineChanges>0)){
-      state=remote.data;safeStorage.set('pp_full',JSON.stringify(state));persistStateIDB(JSON.stringify(state));render();updateSyncBadge('Sincronizado','#d9f5e7');
-    }else if(localTime>remoteTime||state.offlineChanges>0){await cloudSave(true)}
-    else updateSyncBadge('Sincronizado','#d9f5e7');
+    // Fusión no destructiva: se combinan datos locales y de la nube y se sube el resultado,
+    // de modo que ambos dispositivos convergen sin borrarse entre sí.
+    state=mergeCloudStates(state, remote.data);
+    safeStorage.set('pp_full',JSON.stringify(state));persistStateIDB(JSON.stringify(state));render();
+    await cloudSave(true);
   }catch(e){console.warn('Sincronización inicial pendiente',e);updateSyncBadge('Pendiente','#ffd27d')}
 }
 async function cloudRest(path,options={}){
