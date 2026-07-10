@@ -1,0 +1,60 @@
+{
+  "name": "mi-proyecto-personal-windows",
+  "version": "42.0.0",
+  "description": "App personal offline con sincronización opcional Windows + iPhone",
+  "main": "main.js",
+  "author": "HM Innovation",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win nsis portable",
+    "build:portable": "electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.hminnovation.miproyectopersonal",
+    "productName": "Mi Proyecto Personal",
+    "asar": true,
+    "files": [
+      "index.html",
+      "main.js",
+      "preload.js",
+      "assets/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Mi-Proyecto-Personal-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Mi Proyecto Personal",
+      "installerLanguages": [
+        "es_ES"
+      ]
+    }
+  }
+}

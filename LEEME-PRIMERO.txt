@@ -1,0 +1,11 @@
+MI PROYECTO PERSONAL v42 — WINDOWS + IPHONE
+
+La app funciona localmente aun sin internet. Para sincronizar:
+1) En Supabase abre SQL Editor, pega CONFIGURAR-SUPABASE.sql y pulsa Run.
+2) En la app abre Ajustes > Centro > Supabase gratis y respaldo.
+3) Escribe el mismo correo y contraseña en Windows y iPhone.
+4) Pulsa Crear cuenta una sola vez. Confirma el correo si Supabase lo pide.
+5) Después pulsa Entrar. La sincronización será automática.
+
+Para iPhone: sube los archivos de esta carpeta a GitHub Pages/Netlify y abre la dirección en Safari. Luego Compartir > Agregar a pantalla de inicio.
+Nunca compartas tu contraseña. La clave publishable incluida es pública y está diseñada para usarse en la aplicación.
