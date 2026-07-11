@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='42.0.0';
+  window.HM_APP_VERSION='43.0.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -425,8 +425,8 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       </div>
     </div>
     <div class="appStatusBox">
-      <span class="versionChip">v41.26</span>
-      <span id="syncBadge" class="localChip">● Local</span>
+      <span class="versionChip">v43</span>
+      <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
   <!-- Group tabs (top) -->
@@ -572,7 +572,9 @@ function tryLoadIDB(){
   let previous=Number(state.schemaVersion||0);
 if(_storedStateRaw&&previous<APP_SCHEMA_VERSION)saveVersionSnapshot(_storedStateRaw,'antes-v24-'+new Date().toISOString());
   state.schemaVersion=APP_SCHEMA_VERSION;
-state.appVersion=window.HM_APP_VERSION||'42.0.0';
+state.appVersion=window.HM_APP_VERSION||'43.0.0';
+  // v43: dar id/client_id/updated_at estables a los pesos existentes SIN borrar nada.
+  try{if(typeof normalizeAllWeights==='function')normalizeAllWeights();}catch(e){}
   safeStorage.set('pp_full',JSON.stringify(state));
   persistStateIDB(JSON.stringify(state));
 })();
@@ -2887,6 +2889,10 @@ function secCentro(){
     <p class="muted" style="margin:10px 0 2px">👤 <b>Primera vez:</b> escribe correo y contraseña, pulsa <b>Crear cuenta</b>, confirma desde tu correo y luego <b>Entrar</b>. Si ya tienes cuenta, solo <b>Entrar</b>.</p>
     <div class="row" style="margin-top:4px"><span class="muted" style="align-self:center;font-weight:800">Cuenta:</span><button class="btn" id="btnCrearCuenta" onclick="cloudSignUp()">📝 Crear cuenta</button><button class="btn primary" id="btnEntrar" onclick="cloudSignIn()">🔑 Entrar</button><button class="btn" id="btnReenviar" onclick="cloudResendConfirm()">✉️ Reenviar confirmación</button></div>
     <div class="row" style="margin-top:8px"><span class="muted" style="align-self:center;font-weight:800">Respaldo:</span><button class="btn primary" onclick="cloudSave()">☁️ Subir respaldo</button><button class="btn" onclick="cloudLoad()">⬇️ Recuperar nube</button><button class="btn" onclick="cloudSignOut()">🚪 Salir</button></div><div id="cloudStatus"></div>
+    <hr style="border:none;border-top:1px solid var(--b);margin:14px 0">
+    <h3 style="margin:0 0 6px">🔄 Estado de la app</h3>
+    <button class="btn primary" style="width:100%;font-size:16px;padding:12px" onclick="syncNow()">🔄 Sincronizar ahora</button>
+    <div id="syncEstado" style="margin-top:10px"></div>
     <hr style="border:none;border-top:1px solid var(--b);margin:14px 0"><button class="btn" onclick="exportData()">Descargar JSON</button><input type="file" id="centerImportFile" accept=".json"><button class="btn" onclick="importCenterBackup()">Restaurar archivo</button>
   </div></details>
   <details><summary>PIN y privacidad</summary><div class="card"><div class="grid"><input id="newAppPin" type="password" inputmode="numeric" maxlength="6" placeholder="PIN de 4–6 números"><button class="btn primary" onclick="setAppPin()">Guardar PIN</button><button class="btn" onclick="removeAppPin()">Quitar PIN</button><button class="btn" onclick="setupPasskey()">Configurar Face ID / passkey</button></div><p class="muted">WebAuthn funciona únicamente por HTTPS y depende del dispositivo. El PIN local no sustituye el cifrado del sistema.</p></div></details>
@@ -6691,40 +6697,149 @@ function mergeCloudStates(local,remote){
   base.lastModified=new Date().toISOString();
   return base;
 }
+// ===== v43: sincronización robusta, no destructiva, con estado y diagnóstico =====
+function ppUUID(){try{if(window.crypto&&crypto.randomUUID)return crypto.randomUUID()}catch(e){}
+  return 'w-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);}
+// Asegura id/client_id/updated_at estables en un registro de peso. NUNCA borra ni reemplaza datos.
+function normalizeWeightEntry(x){
+  if(!x||typeof x!=='object')return x;
+  if(!x.client_id)x.client_id=(x.id!=null?String(x.id):ppUUID());
+  if(x.id==null)x.id=x.client_id;
+  if(!x.updated_at)x.updated_at=(x.d?x.d+'T12:00:00.000Z':new Date().toISOString());
+  return x;
+}
+function normalizeAllWeights(){(state.weight||[]).forEach(normalizeWeightEntry);}
+// Fusiona listas de peso por client_id conservando la versión con updated_at más reciente. No pierde filas.
+function mergeWeightLists(a,b){
+  a=Array.isArray(a)?a:[];b=Array.isArray(b)?b:[];
+  let map=new Map();
+  let put=x=>{if(!x||typeof x!=='object')return;normalizeWeightEntry(x);let prev=map.get(x.client_id);
+    if(!prev||Date.parse(x.updated_at||0)>=Date.parse(prev.updated_at||0))map.set(x.client_id,x);};
+  a.forEach(put);b.forEach(put);
+  return Array.from(map.values()).sort((m,n)=>String(m.d||'').localeCompare(String(n.d||'')));
+}
+function ensureId(x){if(x&&typeof x==='object'&&x.id==null)x.id=ppUUID();return x;}
+// Estado de sincronización centralizado: badge de 5 estados + panel de diagnóstico en español.
+let PP_SYNC={kind:'',detail:'',lastError:'',lastSyncAt:null,downloaded:null};
+let _startupSynced=false;
+const _SYNC_LABEL={offline:'Sin conexión',pending:'Pendiente',syncing:'Sincronizando',synced:'Sincronizado',error:'Error',nosession:'Sin sesión'};
+const _SYNC_COLOR={offline:'#ffd27d',pending:'#fff0a8',syncing:'#bfe3ff',synced:'#d9f5e7',error:'#ffc9c0',nosession:'#e6e6e6'};
+function setSync(kind,detail){PP_SYNC.kind=kind;PP_SYNC.detail=detail||'';
+  if(kind==='synced'){PP_SYNC.lastSyncAt=new Date();PP_SYNC.lastError='';}
+  if(kind==='error'&&detail)PP_SYNC.lastError=detail;
+  renderSyncUI();}
+function renderSyncUI(){
+  let b=document.getElementById('syncBadge');
+  if(b){let base=_SYNC_LABEL[PP_SYNC.kind]||'Local';
+    let extra=(PP_SYNC.detail&&(PP_SYNC.kind==='pending'||PP_SYNC.kind==='offline'))?' · '+PP_SYNC.detail:'';
+    b.textContent='● '+base+extra;b.style.color=_SYNC_COLOR[PP_SYNC.kind]||'#15704f';b.title='Toca para sincronizar ahora';}
+  try{renderSyncEstado()}catch(e){}
+}
+// Compatibilidad con llamadas antiguas updateSyncBadge('Sincronizado', color).
+function updateSyncBadge(text,color){
+  let t=(text||'').toLowerCase();
+  if(/sin conexi/.test(t))return setSync('offline',(String(text).split('·')[1]||'').trim());
+  if(/sincronizando/.test(t))return setSync('syncing');
+  if(/sincronizado/.test(t))return setSync('synced');
+  if(/pendiente/.test(t))return setSync('pending',(String(text).split('·')[1]||'').trim());
+  if(/error/.test(t))return setSync('error',PP_SYNC.lastError||String(text));
+  if(/local/.test(t))return setSync(getCloudSession()?'pending':'nosession');
+  setSync(PP_SYNC.kind||'nosession');
+}
+// Panel "Estado de la app" (Ajustes → Supabase). Muestra errores en español, nunca los oculta.
+function renderSyncEstado(){
+  let el=document.getElementById('syncEstado');if(!el)return;
+  let s=getCloudSession();
+  let last=PP_SYNC.lastSyncAt?PP_SYNC.lastSyncAt.toLocaleString('es-US'):'aún no en esta sesión';
+  el.innerHTML=`<div class="grid">
+      <div class="mini"><b>Sesión</b><br>${s?safeText(s.user?.email||'usuario'):'Sin sesión iniciada'}</div>
+      <div class="mini"><b>Estado</b><br>${_SYNC_LABEL[PP_SYNC.kind]||'Local'}</div>
+      <div class="mini"><b>Internet</b><br>${navigator.onLine?'Conectado':'Sin conexión'}</div>
+      <div class="mini"><b>Pesos locales</b><br>${(state.weight||[]).length}</div>
+      <div class="mini"><b>Descargados de la nube</b><br>${PP_SYNC.downloaded!=null?PP_SYNC.downloaded:'—'}</div>
+      <div class="mini"><b>Última sincronización</b><br>${last}</div>
+    </div>
+    ${PP_SYNC.lastError?`<div class="warn" style="margin-top:8px"><b>Último error:</b> ${safeText(PP_SYNC.lastError)}</div>`:'<div class="ok" style="margin-top:8px">Sin errores registrados.</div>'}`;
+}
 async function cloudStartupSync(){
-  if(!navigator.onLine||!getCloudSession())return;
+  if(!navigator.onLine||!getCloudSession()){renderSyncUI();return}
+  if(_syncing)return;
   try{
     await refreshCloudSession();
     let s=getCloudSession();
+    console.log('[SYNC] Usuario conectado:',s&&s.user&&s.user.email,'· id:',s&&s.user&&s.user.id);
+    setSync('syncing');
+    // 1) Respaldo completo (blob) — fusión no destructiva con lo local.
     let rows=await cloudRest('personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at');
     let remote=rows&&rows[0];
-    if(!remote){await cloudSave(true);return}
-    // Fusión no destructiva: se combinan datos locales y de la nube y se sube el resultado,
-    // de modo que ambos dispositivos convergen sin borrarse entre sí.
-    state=mergeCloudStates(state, remote.data);
-    safeStorage.set('pp_full',JSON.stringify(state));persistStateIDB(JSON.stringify(state));render();
-    await cloudSave(true);
-  }catch(e){console.warn('Sincronización inicial pendiente',e);updateSyncBadge('Pendiente','#ffd27d')}
+    if(remote&&remote.data)state=mergeCloudStates(state, remote.data);
+    // 2) Tabla granular de peso: canal confiable por-fila (merge por updated_at).
+    let pesoRows=await cloudRest('peso?user_id=eq.'+encodeURIComponent(s.user.id)+'&deleted=is.false&select=client_id,data,updated_at');
+    let remoteWeights=(pesoRows||[]).map(r=>{let d=(r.data&&typeof r.data==='object')?r.data:{};d.client_id=d.client_id||r.client_id;d.updated_at=d.updated_at||r.updated_at;return d;});
+    console.log('[SYNC] Registros de peso descargados de la nube:',remoteWeights.length);
+    PP_SYNC.downloaded=remoteWeights.length;
+    state.weight=mergeWeightLists(state.weight, remoteWeights);
+    normalizeAllWeights();
+    safeStorage.set('pp_full',JSON.stringify(state));persistStateIDB(JSON.stringify(state));
+    _startupSynced=true;
+    render();
+    await cloudSave(true); // sube la UNIÓN (nunca más pobre que la nube): frena la pérdida de datos.
+    setSync('synced');
+  }catch(e){console.error('[SYNC] Error en sincronización inicial:',e);setSync('error',(e&&e.message)||'Error desconocido');}
+}
+// Botón visible "Sincronizar ahora": fuerza descarga + fusión + subida.
+async function syncNow(){
+  let s=getCloudSession();
+  if(!s){cloudStatus('Primero inicia sesión con tu correo (abajo, en Cuenta) para sincronizar.',false);setSync('nosession');return;}
+  if(!navigator.onLine){cloudStatus('Sin conexión a internet ahora mismo.',false);setSync('offline',String(state.offlineChanges||0));return;}
+  cloudStatus('Sincronizando ahora…');
+  await cloudStartupSync();
+  if(PP_SYNC.kind==='synced')cloudStatus('✅ Sincronizado. Pesos en la nube descargados: '+(PP_SYNC.downloaded!=null?PP_SYNC.downloaded:(state.weight||[]).length));
+  else if(PP_SYNC.kind==='error')cloudStatus('Error al sincronizar: '+PP_SYNC.lastError,false);
 }
 async function cloudRest(path,options={}){
   let c=getCloudConfig(),s=await refreshCloudSession();if(!c.url||!c.key||!s?.access_token)throw Error('Inicia sesión primero.');
   let r=await fetch(c.url+'/rest/v1/'+path,{...options,headers:{apikey:c.key,Authorization:'Bearer '+s.access_token,'Content-Type':'application/json',...(options.headers||{})}});let text=await r.text();if(!r.ok)throw Error(text||'Error de base de datos');return text?JSON.parse(text):null;
 }
 let _autoSyncTimer=null,_syncing=false;
-function updateSyncBadge(text,color='#d9f5e7'){let b=document.getElementById('syncBadge');if(b){b.textContent='● '+text;b.style.color=color}}
 function scheduleAutoSync(){
   state.offlineChanges=(state.offlineChanges||0)+1;
   let session=getCloudSession();
-  if(!navigator.onLine){updateSyncBadge('Sin conexión · '+state.offlineChanges,'#ffd27d');return}
-  if(!session){updateSyncBadge('Local','#d9f5e7');return}
-  updateSyncBadge('Pendiente · '+state.offlineChanges,'#fff0a8');clearTimeout(_autoSyncTimer);_autoSyncTimer=setTimeout(()=>cloudSave(true),2500);
+  if(!session){setSync('nosession');return}
+  if(!navigator.onLine){setSync('offline',String(state.offlineChanges));return}
+  setSync('pending',String(state.offlineChanges));
+  clearTimeout(_autoSyncTimer);
+  if(!_startupSynced){
+    // Aún no hemos fusionado la nube en esta sesión: primero descargamos para no pisar datos remotos.
+    console.log('[SYNC] Cambio local en cola; se fusiona con la nube antes de subir.');
+    _autoSyncTimer=setTimeout(()=>{cloudStartupSync().then(()=>cloudSave(true))},1500);
+    return;
+  }
+  _autoSyncTimer=setTimeout(()=>cloudSave(true),2500);
 }
-async function cloudSave(silent=false){if(_syncing)return;_syncing=true;try{let s=getCloudSession();updateSyncBadge('Sincronizando','#fff0a8');await cloudRest('personal_backups?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:s.user.id,data:state,updated_at:new Date().toISOString()})});await mirrorGranular(s.user.id).catch(err=>console.warn('Espejo granular pendiente',err));state.offlineChanges=0;safeStorage.set('pp_full',JSON.stringify(state));updateSyncBadge('Sincronizado','#d9f5e7');if(!silent)cloudStatus('Datos sincronizados en Supabase.')}catch(e){updateSyncBadge('Pendiente · '+state.offlineChanges,'#ffd27d');if(!silent)cloudStatus(e.message,false)}finally{_syncing=false}}
-// Espeja el estado local a las tablas granulares (peso, comidas, calorías, proteína, ejercicios, pasos, gastos, ajustes).
+async function cloudSave(silent=false){
+  if(_syncing)return;
+  let s=getCloudSession();
+  if(!s){setSync('nosession');if(!silent)cloudStatus('Inicia sesión primero.',false);return}
+  if(!navigator.onLine){setSync('offline',String(state.offlineChanges||0));if(!silent)cloudStatus('Sin conexión a internet.',false);return}
+  _syncing=true;
+  try{
+    setSync('syncing');
+    normalizeAllWeights();
+    console.log('[SYNC] Petición enviada a Supabase (personal_backups). Pesos locales:',(state.weight||[]).length);
+    await cloudRest('personal_backups?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:s.user.id,data:state,updated_at:new Date().toISOString()})});
+    console.log('[SYNC] Respuesta de Supabase: respaldo guardado OK.');
+    await mirrorGranular(s.user.id).catch(err=>console.warn('[SYNC] Espejo granular pendiente',err));
+    state.offlineChanges=0;safeStorage.set('pp_full',JSON.stringify(state));
+    setSync('synced');
+    if(!silent)cloudStatus('Datos sincronizados en Supabase.');
+  }catch(e){console.error('[SYNC] Error al subir a Supabase:',e);setSync('error',(e&&e.message)||'Error');if(!silent)cloudStatus(e.message,false)}
+  finally{_syncing=false}
+}
+// Espeja el estado local a las tablas granulares de forma NO destructiva (upsert por fila; nunca DELETE masivo).
 // Best-effort: cualquier fallo aquí no afecta al respaldo principal (personal_backups).
 async function mirrorGranular(uid){
   let now=new Date().toISOString();
-  // Tablas de lista: se reemplaza el contenido del usuario por su estado local actual.
   let listas={
     peso:(state.weight||[]),
     comidas:(state.meals||[]),
@@ -6734,10 +6849,12 @@ async function mirrorGranular(uid){
   };
   for(let tabla in listas){
     try{
-      await cloudRest(tabla+'?user_id=eq.'+encodeURIComponent(uid),{method:'DELETE',headers:{Prefer:'return=minimal'}});
-      let filas=listas[tabla].map((item,i)=>({user_id:uid,client_id:(item&&item.id!=null?String(item.id):tabla[0]+i),data:item,updated_at:now}));
-      if(filas.length)await cloudRest(tabla,{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(filas)});
-    }catch(e){console.warn('Espejo '+tabla+' pendiente',e);}
+      let filas=listas[tabla].map(item=>{ensureId(item);let cid=item.client_id||String(item.id);item.client_id=cid;
+        return {user_id:uid,client_id:cid,data:item,updated_at:item.updated_at||now,deleted:false};});
+      // Upsert por (user_id, client_id): agrega/actualiza sin borrar filas existentes de otros dispositivos.
+      if(filas.length)await cloudRest(tabla+'?on_conflict=user_id,client_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(filas)});
+      if(tabla==='peso')console.log('[SYNC] Peso espejado a la nube (upsert):',filas.length,'filas.');
+    }catch(e){console.warn('[SYNC] Espejo '+tabla+' pendiente',e);}
   }
   // Calorías y proteína: total del día actual derivado de las comidas (se acumula un registro por día).
   try{
@@ -6753,7 +6870,7 @@ async function mirrorGranular(uid){
   }catch(e){console.warn('Espejo ajustes pendiente',e);}
 }
 async function cloudLoad(){try{let s=getCloudSession(),rows=await cloudRest('personal_backups?user_id=eq.'+encodeURIComponent(s.user.id)+'&select=data,updated_at');if(!rows?.[0])throw Error('Todavía no existe respaldo.');let remote=rows[0],localDate=state.lastModified||'sin fecha',remoteDate=remote.data.lastModified||remote.updated_at;if(!confirm(`Local: ${localDate}\\nNube: ${remoteDate}\\n\\nUsar la versión de la nube y reemplazar la local?`))return;state=remote.data;save();render();cloudStatus('Respaldo recuperado: '+remote.updated_at)}catch(e){cloudStatus(e.message,false)}}
-function cloudSignOut(){safeStorage.set('pp_cloud_session','');cloudStatus('Sesión cerrada.')}
+function cloudSignOut(){safeStorage.set('pp_cloud_session','');_startupSynced=false;PP_SYNC.downloaded=null;setSync('nosession');cloudStatus('Sesión cerrada.')}
 async function cloudUploadProgressPhoto(photo){
   let c=getCloudConfig(),s=getCloudSession();if(!c.url||!c.key||!s?.access_token||!navigator.onLine)return;
   try{let blob=await fetch(photo.img).then(r=>r.blob()),path=`${s.user.id}/progress/${photo.id}.jpg`;
@@ -6761,8 +6878,8 @@ async function cloudUploadProgressPhoto(photo){
     if(!r.ok)throw Error(await r.text());photo.cloudPath=path;safeStorage.set('pp_full',JSON.stringify(state));updateSyncBadge('Foto en nube','#d9f5e7');
   }catch(e){console.warn('Foto pendiente de nube',e)}
 }
-window.addEventListener('online',()=>{if(state.offlineChanges&&getCloudSession()){updateSyncBadge('Pendiente · '+state.offlineChanges,'#fff0a8');cloudSave(true)}else updateSyncBadge(getCloudSession()?'Sincronizado':'Local',getCloudSession()?'#d9f5e7':'#d9f5e7')});
-window.addEventListener('offline',()=>updateSyncBadge('Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:''),'#ffd27d'));
+window.addEventListener('online',()=>{if(!getCloudSession()){setSync('nosession');return}setSync('pending',String(state.offlineChanges||0));cloudStartupSync();});
+window.addEventListener('offline',()=>setSync('offline',String(state.offlineChanges||0)));
 window.addEventListener('load',()=>setTimeout(cloudStartupSync,1200));
 
 let _progressPhotoData='';
@@ -8823,7 +8940,10 @@ function exportWorkoutLog(){
 }
 function muscle(m){let arr=exercises[m]||[];$('#muscleOut').innerHTML=`<h3>${m}</h3>`+arr.map(x=>`<div class="item">${x} <a target="_blank" href="${exLink(x)}">Ver imagen</a></div>`).join('')}
 function rotateBody(v){}
-function addWeight(){var nuevoPeso=+$('#wVal').value;if(!nuevoPeso){alert('Escribe tu peso primero.');return;}state.weight.push({d:$('#wDate').value||new Date().toISOString().slice(0,10),w:nuevoPeso});
+function addWeight(){var nuevoPeso=+$('#wVal').value;if(!nuevoPeso){alert('Escribe tu peso primero.');return;}
+  var entry=normalizeWeightEntry({d:$('#wDate').value||new Date().toISOString().slice(0,10),w:nuevoPeso,updated_at:new Date().toISOString()});
+  state.weight.push(entry);
+  console.log('[SYNC] Peso guardado localmente:',entry);
   // Sincroniza automáticamente el peso en tu perfil (se usa en calorías y otras secciones)
   if(state.profile){state.profile.peso=nuevoPeso;}
   save();renderWeight();drawGrafica();
@@ -9531,7 +9651,7 @@ function importData(){
       let summary=`Peso: ${(incoming.weight||[]).length}\\nGastos: ${(incoming.expenses||[]).length}\\nComidas registradas: ${(incoming.meals||[]).length}\\nFotos de progreso: ${(incoming.progressPhotos||[]).length}\\n\\nReemplazar los datos actuales?`;
       if(!confirm(summary))return;
       await saveVersionSnapshot(JSON.stringify(state),'antes-importar-'+new Date().toISOString());
-      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'42.0.0';save();render();alert('Respaldo importado correctamente.');
+      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'43.0.0';save();render();alert('Respaldo importado correctamente.');
     }catch(error){alert('No se pudo importar: '+error.message)}
   };
   reader.readAsText(file);
@@ -10111,7 +10231,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='42.0.0';
+    window.HM_APP_VERSION='43.0.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
