@@ -1,0 +1,80 @@
+{
+  "latest": "45.1.0",
+  "date": "2026-07-11",
+  "minVersion": "43.0.0",
+  "history": [
+    {
+      "version": "45.1.0",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Centro de actualizaciones: aviso de versión nueva con novedades, cambios y correcciones",
+        "Sección Actualizaciones en Ajustes con versión instalada, última disponible e historial"
+      ],
+      "cambios": [
+        "Botón Actualizar y Recordar después en el aviso de nueva versión"
+      ],
+      "errores": []
+    },
+    {
+      "version": "45.0.0",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Registro inicial para cuentas nuevas (nombre, edad, peso, estatura, objetivo, actividad, pasos, preferencias y herramientas)",
+        "Perfil ampliado: campos Nombre y Preferencias de comida"
+      ],
+      "cambios": ["A quien ya tiene datos no se le pide el registro inicial"],
+      "errores": []
+    },
+    {
+      "version": "44.4.0",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": ["14 recetas completas más (comidas mexicanas, sopas, postres, pastas, proteína)"],
+      "cambios": [],
+      "errores": []
+    },
+    {
+      "version": "44.3.0",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Categorías nuevas: Sopas, Arroces, Espaguetis y pastas, Pollo cocido, Postres",
+        "Recetas completas con porciones, macros, cómo guardar, recalentar y llevar al trabajo",
+        "Filtros rápidos: Económicas, Rápidas, Ganar peso, Ganar músculo"
+      ],
+      "cambios": [],
+      "errores": []
+    },
+    {
+      "version": "44.2.0",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Mi cocina: elige tus herramientas (Estufa, Horno, Microondas, Thermomix, Instant Pot, Air Fryer, Vaporera)",
+        "Preparar receta: métodos de preparación según lo que tienes"
+      ],
+      "cambios": [],
+      "errores": []
+    },
+    {
+      "version": "44.0.0",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": ["Botón de recetas favoritas visible", "Objetivo Ganar peso"],
+      "cambios": ["Favoritos con id estable (no se mueven al agregar recetas nuevas)"],
+      "errores": ["El indicador de versión se quedaba en v41.26"]
+    },
+    {
+      "version": "43.0.0",
+      "date": "2026-07-11",
+      "type": "obligatoria",
+      "nuevas": ["Botón Sincronizar ahora", "Estado de la app con 5 estados y diagnóstico"],
+      "cambios": ["El indicador ahora dice Sin sesión cuando no has iniciado sesión"],
+      "errores": [
+        "IMPORTANTE: se corrigió una pérdida de datos por sincronización destructiva (el peso podía borrarse en la nube)"
+      ]
+    }
+  ]
+}

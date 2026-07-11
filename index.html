@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='45.0.0';
+  window.HM_APP_VERSION='45.1.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -573,7 +573,7 @@ function tryLoadIDB(){
   let previous=Number(state.schemaVersion||0);
 if(_storedStateRaw&&previous<APP_SCHEMA_VERSION)saveVersionSnapshot(_storedStateRaw,'antes-v24-'+new Date().toISOString());
   state.schemaVersion=APP_SCHEMA_VERSION;
-state.appVersion=window.HM_APP_VERSION||'45.0.0';
+state.appVersion=window.HM_APP_VERSION||'45.1.0';
   // v43: dar id/client_id/updated_at estables a los pesos existentes SIN borrar nada.
   try{if(typeof normalizeAllWeights==='function')normalizeAllWeights();}catch(e){}
   // v45: usuarios con datos previos ya cuentan como registrados (no se les muestra el registro inicial).
@@ -7248,7 +7248,7 @@ function ownMauiPantry(i){
   let out=document.getElementById('fridgeOut');if(out)out.innerHTML='<div class="ok"><b>Agregado a tu nevera:</b> '+safeText(x.name)+'. Ahora puedes tocar Crear comida o Lista de compra.</div>';
 }
 
-function bindAll(){try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(!getCloudSession())maybeShowOnboarding();},600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);}
+function bindAll(){try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(!getCloudSession())maybeShowOnboarding();},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);}
 function convertWorkoutWeight(source){
   let lb=document.getElementById('workoutLb'),kg=document.getElementById('workoutKg'),out=document.getElementById('workoutWeightOut');
   if(!lb||!kg||!out)return;
@@ -7869,6 +7869,93 @@ function finishOnboarding(){
   save();
   var b=document.getElementById('onboardingModal'); if(b)b.remove();
   try{render()}catch(e){}
+}
+// ===== v45.1 Fase E: Centro de actualizaciones =====
+let PP_UPDATE={checked:false,info:null,latest:null,dismissed:false};
+function ppVerCmp(a,b){
+  a=String(a||'0').split('.').map(n=>parseInt(n,10)||0);
+  b=String(b||'0').split('.').map(n=>parseInt(n,10)||0);
+  for(let i=0;i<Math.max(a.length,b.length);i++){var x=a[i]||0,y=b[i]||0;if(x>y)return 1;if(x<y)return -1;}
+  return 0;
+}
+async function ppFetchVersion(){
+  try{
+    let r=await fetch('./version.json?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok)throw 0;
+    let j=await r.json();
+    PP_UPDATE.info=j; PP_UPDATE.latest=j.latest;
+    return j;
+  }catch(e){return null;}
+}
+async function ppCheckUpdates(manual){
+  var status=document.getElementById('updateStatusOut');
+  if(location.protocol==='file:'){if(manual&&status)status.innerHTML='<div class="warn">Las actualizaciones funcionan desde la web publicada, no desde un archivo local.</div>';return;}
+  if(manual&&status)status.innerHTML='<div class="muted">Buscando actualización…</div>';
+  var j=await ppFetchVersion();
+  PP_UPDATE.checked=true;
+  var installed=window.HM_APP_VERSION||'0';
+  try{renderActualizaciones()}catch(e){}
+  if(!j){if(manual&&status)status.innerHTML='<div class="warn">No se pudo comprobar la actualización ahora.</div>';return;}
+  var hayNueva=ppVerCmp(j.latest,installed)>0;
+  var obligatoria=ppVerCmp(installed,j.minVersion||'0')<0;
+  if(hayNueva && !(PP_UPDATE.dismissed && !obligatoria)){
+    showUpdateNotice(j,obligatoria);
+  }else if(manual && status){
+    status.innerHTML=hayNueva?'':'<div class="ok">Ya tienes la última versión ('+installed+').</div>';
+  }
+}
+function _verEntry(j,ver){return (j.history||[]).find(h=>h.version===ver)||(j.history||[])[0]||{};}
+function showUpdateNotice(j,obligatoria){
+  if(!j)return;
+  if(document.getElementById('updateNotice'))return;
+  var e=_verEntry(j,j.latest);
+  var box=document.createElement('div');box.id='updateNotice';
+  box.style.cssText='position:fixed;inset:0;background:#000b;z-index:23500;display:grid;place-items:center;padding:16px;overflow:auto';
+  var lista=function(t,arr,ic){arr=arr||[];if(!arr.length)return '';return '<div style="margin-top:8px"><b>'+ic+' '+t+'</b><ul style="margin:4px 0 0;padding-left:20px">'+arr.map(x=>'<li style="margin:3px 0;font-size:14px">'+safeText(x)+'</li>').join('')+'</ul></div>';};
+  box.innerHTML='<div class="card" style="width:min(560px,100%);max-height:92vh;overflow:auto">'
+    +'<h2 style="margin-top:0">'+(obligatoria?'🔒 Tienes que actualizar la app':'⬆️ Actualización disponible')+'</h2>'
+    +'<p class="muted">Versión <b>'+safeText(j.latest)+'</b> · '+safeText(j.date||'')+' · '+(obligatoria?'obligatoria':'recomendada')+'<br>Tú tienes la '+safeText(window.HM_APP_VERSION||'')+'.</p>'
+    +(obligatoria?'<div class="warn"><b>Tienes que actualizar la app para continuar.</b> Esta versión corrige algo importante (seguridad, inicio de sesión o sincronización).</div>':'')
+    +lista('Funciones nuevas',e.nuevas,'✨')
+    +lista('Cambios',e.cambios,'🔧')
+    +lista('Errores corregidos',e.errores,'🐞')
+    +'<div class="row" style="gap:8px;margin-top:14px">'
+    +'<button class="btn primary" style="flex:1;min-height:50px;font-size:16px" onclick="applyAppUpdate()">Actualizar ahora</button>'
+    +(obligatoria?'':'<button class="btn" style="min-height:50px" onclick="dismissUpdateNotice()">Recordar después</button>')
+    +'</div></div>';
+  document.body.appendChild(box);
+}
+function dismissUpdateNotice(){PP_UPDATE.dismissed=true;var b=document.getElementById('updateNotice');if(b)b.remove();}
+async function applyAppUpdate(){
+  var b=document.getElementById('updateNotice');if(b)b.innerHTML='<div class="card"><b>Actualizando…</b><p class="muted">La app se recargará en un momento.</p></div>';
+  try{
+    if('serviceWorker'in navigator){
+      var reg=window._hmRegistration||await navigator.serviceWorker.getRegistration();
+      if(reg){ await reg.update(); if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'}); }
+    }
+  }catch(e){}
+  setTimeout(function(){location.reload()},900);
+}
+function renderActualizaciones(){
+  var el=document.getElementById('actualizacionesOut');if(!el)return;
+  var installed=window.HM_APP_VERSION||'—';
+  var j=PP_UPDATE.info;
+  var latest=j?j.latest:'(sin comprobar)';
+  var hayNueva=j?ppVerCmp(j.latest,installed)>0:false;
+  var estado=!j?'No comprobado':hayNueva?'Actualización disponible':'Al día';
+  var histHTML=((j&&j.history)||[]).map(function(h){
+    var tipo=h.type==='obligatoria'?'<span style="background:#ffe1dd;color:#a23124;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:800">obligatoria</span>':'<span style="background:#dff6e8;color:#10623f;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:800">recomendada</span>';
+    var items=[].concat((h.nuevas||[]).map(x=>'✨ '+x),(h.cambios||[]).map(x=>'🔧 '+x),(h.errores||[]).map(x=>'🐞 '+x));
+    return '<details class="settings-clean-details" style="margin-top:6px"><summary><b>v'+safeText(h.version)+'</b> · '+safeText(h.date||'')+' '+tipo+'</summary><div class="card"><ul style="margin:0;padding-left:20px">'+items.map(x=>'<li style="margin:3px 0;font-size:14px">'+safeText(x)+'</li>').join('')+'</ul></div></details>';
+  }).join('');
+  el.innerHTML='<div class="grid"><div class="mini"><b>Versión instalada</b><br>'+safeText(installed)+'</div>'
+    +'<div class="mini"><b>Última disponible</b><br>'+safeText(latest)+'</div>'
+    +'<div class="mini"><b>Estado</b><br>'+estado+'</div>'
+    +'<div class="mini"><b>Fecha última versión</b><br>'+safeText(j?j.date:'—')+'</div></div>'
+    +'<div class="row" style="gap:8px;margin-top:8px"><button class="btn primary" onclick="ppCheckUpdates(true)">🔄 Buscar actualización</button>'
+    +(hayNueva?'<button class="btn" onclick="showUpdateNotice(PP_UPDATE.info, ppVerCmp(window.HM_APP_VERSION,(PP_UPDATE.info||{}).minVersion||\'0\')<0)">Ver novedades</button>':'')+'</div>'
+    +'<div id="updateStatusOut" style="margin-top:6px"></div>'
+    +'<h4 style="margin:12px 0 2px">Historial de cambios</h4>'+histHTML;
 }
 // Filtros rápidos por objetivo (usan los controles existentes de tipo/presupuesto/orden).
 function recipeQuickFilter(kind){
@@ -10034,7 +10121,7 @@ function importData(){
       let summary=`Peso: ${(incoming.weight||[]).length}\\nGastos: ${(incoming.expenses||[]).length}\\nComidas registradas: ${(incoming.meals||[]).length}\\nFotos de progreso: ${(incoming.progressPhotos||[]).length}\\n\\nReemplazar los datos actuales?`;
       if(!confirm(summary))return;
       await saveVersionSnapshot(JSON.stringify(state),'antes-importar-'+new Date().toISOString());
-      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'45.0.0';save();render();alert('Respaldo importado correctamente.');
+      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'45.1.0';save();render();alert('Respaldo importado correctamente.');
     }catch(error){alert('No se pudo importar: '+error.message)}
   };
   reader.readAsText(file);
@@ -10614,7 +10701,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='45.0.0';
+    window.HM_APP_VERSION='45.1.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
@@ -10754,6 +10841,7 @@ tryLoadIDB();
       </div>
       <div class="${rec.yes?'warn':'ok'}" style="margin:10px 0"><b>Último guardado:</b> ${safeText(last)}<br>${rec.yes?'Descarga un respaldo si hiciste cambios importantes.':'Puedes seguir usando la app normal.'}</div>
       <details class="settings-clean-details"><summary>👁️ Mostrar u ocultar secciones</summary><div class="card"><p class="muted">Desmarca lo que no ocupes. No se borra, solo se esconde.</p><div id="visibleSectionsOut"></div></div></details>
+      <details class="settings-clean-details" ontoggle="if(this.open){try{ppCheckUpdates(false)}catch(e){}}"><summary>📥 Actualizaciones</summary><div class="card"><div id="actualizacionesOut"></div></div></details>
       <details class="settings-clean-details"><summary>💾 Respaldo y nube</summary><div class="card">${(typeof hmv413BackupPanel==='function')?hmv413BackupPanel():''}<div class="grid"><button class="btn" onclick="checkForAppUpdate&&checkForAppUpdate()">Buscar actualización</button><button class="btn" onclick="openTab('📊 Base datos')">Importar / exportar</button></div><div id="updateCheckStatus"></div></div></details>
       <details class="settings-clean-details"><summary>🧰 Herramientas avanzadas que casi no se usan</summary><div class="card"><p class="muted">Calendario, mapa de conexión, inventario, alertas largas y herramientas técnicas quedaron aquí. Ábrelo solo cuando lo necesites.</p>${v4124OldSecCentro?v4124OldSecCentro():''}</div></details>`;
     };
