@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='44.2.0';
+  window.HM_APP_VERSION='44.3.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -573,7 +573,7 @@ function tryLoadIDB(){
   let previous=Number(state.schemaVersion||0);
 if(_storedStateRaw&&previous<APP_SCHEMA_VERSION)saveVersionSnapshot(_storedStateRaw,'antes-v24-'+new Date().toISOString());
   state.schemaVersion=APP_SCHEMA_VERSION;
-state.appVersion=window.HM_APP_VERSION||'44.2.0';
+state.appVersion=window.HM_APP_VERSION||'44.3.0';
   // v43: dar id/client_id/updated_at estables a los pesos existentes SIN borrar nada.
   try{if(typeof normalizeAllWeights==='function')normalizeAllWeights();}catch(e){}
   safeStorage.set('pp_full',JSON.stringify(state));
@@ -2186,6 +2186,85 @@ function openThermomixGuide(){
 // Precios ajustados a Maui/Hawái 2026 (estimado): la comida en Maui cuesta ~30% más que el mainland por el envío a la isla.
 baseRecipes.forEach(r=>{ if(typeof r.cost==='number') r.cost=Math.round(r.cost*1.3*100)/100; });
 
+// ===== v44.3 Fase C: recetas completas nuevas (categorías + todos los campos) =====
+// Estas recetas ya traen precio final estilo Maui (no pasan por el multiplicador de arriba).
+function addFull(o){
+  baseRecipes.push(Object.assign({
+    method:'estufa',tags:'',temp:'',ingredients:'',porciones:'',carbs:null,grasas:null,
+    dificultad:'',conservar:'',duracion:'',recalentar:'',llevarTrabajo:'',methods:null
+  },o));
+}
+[
+  // ---------- POSTRES ----------
+  {name:'Arroz con leche cremoso',type:'postre',time:35,k:320,p:8,carbs:55,grasas:7,cost:1.6,porciones:'4',dificultad:'Fácil',
+   tags:'postre economico dulce arroz leche ganar peso',ingredients:'1 taza arroz, 3 tazas leche entera, 1 raja canela, ½ taza azúcar, cáscara de limón, pasas',
+   steps:['Enjuaga el arroz y hiérvelo 10 min en 2 tazas de agua con la canela.','Cuando el agua casi se seque, agrega la leche y la cáscara de limón.','Cocina a fuego bajo 15 min moviendo para que no se pegue.','Agrega el azúcar y las pasas; cocina 5 min más hasta que espese.','Sirve tibio o frío con canela en polvo.'],
+   method:'estufa',temp:'Estufa: fuego bajo-medio',conservar:'En refrigerador, en recipiente tapado.',duracion:'4 días en refri.',recalentar:'Microondas 40-60 s con un chorrito de leche para revivir la cremosidad.',llevarTrabajo:'Sí, en frasco. Rico frío.',
+   methods:[{method:'instantpot',temp:'Instant Pot: presión alta 12 min',steps:['Pon arroz, 1½ taza de agua, la leche, canela y azúcar en la olla.','Tapa, sella y cocina a presión alta 12 min.','Libera presión 10 min de forma natural.','Revuelve; espesará al enfriar. Agrega pasas.']}]},
+  {name:'Plátanos fritos con crema',type:'postre',time:12,k:350,p:4,carbs:60,grasas:11,cost:1.3,porciones:'2',dificultad:'Fácil',
+   tags:'postre rapido economico platano ganar peso',ingredients:'2 plátanos machos maduros, 1 cda mantequilla, crema, azúcar con canela',
+   steps:['Corta los plátanos en rodajas gruesas diagonales.','Derrite la mantequilla en un sartén a fuego medio.','Dora los plátanos 2-3 min por lado hasta caramelizar.','Sirve con crema encima y espolvorea azúcar con canela.'],
+   method:'estufa',temp:'Estufa: fuego medio',conservar:'Mejor recién hechos.',duracion:'1 día en refri.',recalentar:'Sartén 2 min; el microondas los ablanda demasiado.',llevarTrabajo:'No ideal, pierden textura.'},
+  {name:'Gelatina de yogur con fruta',type:'postre',time:15,k:180,p:9,carbs:28,grasas:3,cost:1.4,porciones:'4',dificultad:'Fácil',
+   tags:'postre proteina ligero sin cocinar fruta',ingredients:'1 taza yogur griego, 1 taza leche, 1 sobre grenetina, ¼ taza azúcar, fruta picada',
+   steps:['Hidrata la grenetina en ¼ taza de agua fría 5 min.','Calienta la leche con el azúcar (sin hervir) y disuelve la grenetina.','Deja entibiar y mezcla con el yogur.','Vierte en moldes con fruta picada.','Refrigera 3 horas hasta cuajar.'],
+   method:'sin cocinar',temp:'Refrigerar 3 h',conservar:'Refrigerada, tapada.',duracion:'4 días.',recalentar:'No aplica, se come fría.',llevarTrabajo:'Sí, en frasco con hielo.'},
+  // ---------- SOPAS ----------
+  {name:'Sopa de fideo aguada',type:'sopa',time:20,k:220,p:6,carbs:38,grasas:5,cost:1.0,porciones:'4',dificultad:'Fácil',
+   tags:'sopa economica rapida mexicana fideo',ingredients:'1 paquete fideo, 2 jitomates, ¼ cebolla, 1 diente ajo, 4 tazas caldo de pollo, aceite',
+   steps:['Dora el fideo en un poco de aceite hasta que quede dorado (no quemado).','Licúa jitomate, cebolla y ajo; cuela.','Vierte el molido sobre el fideo y cocina 3 min.','Agrega el caldo, sal y hierve 8-10 min hasta que el fideo esté suave.'],
+   method:'estufa',temp:'Estufa: fuego medio',conservar:'Refrigerador tapado (el fideo absorbe caldo).',duracion:'3 días.',recalentar:'Estufa o microondas 2 min; agrega un poco de caldo.',llevarTrabajo:'Sí, en termo caliente.',
+   methods:[{method:'instantpot',temp:'Instant Pot: presión 3 min',steps:['Usa Saltear para dorar el fideo.','Agrega el molido y el caldo.','Tapa, sella y cocina a presión alta 3 min.','Libera presión rápido con cuidado.']}]},
+  {name:'Caldo de pollo con verduras',type:'sopa',time:40,k:260,p:26,carbs:18,grasas:9,cost:2.6,porciones:'4',dificultad:'Fácil',
+   tags:'sopa proteina caldo pollo saludable ganar musculo',ingredients:'2 piezas de pollo, 1 zanahoria, 1 chayote, 1 papa, ¼ cebolla, cilantro, arroz opcional',
+   steps:['Hierve el pollo con cebolla y sal en 6 tazas de agua, retira espuma.','A los 20 min agrega las verduras en trozos.','Cocina 15 min más hasta que todo esté suave.','Sirve con cilantro, limón y arroz aparte.'],
+   method:'estufa',temp:'Estufa: hervor suave',conservar:'Refrigerador; separa pollo y caldo si puedes.',duracion:'3-4 días.',recalentar:'Estufa hasta hervor o microondas 3 min.',llevarTrabajo:'Sí, en termo.',
+   methods:[{method:'instantpot',temp:'Instant Pot: presión alta 15 min',steps:['Pon pollo, cebolla, sal y 6 tazas de agua.','Presión alta 15 min; libera natural 10 min.','Agrega verduras y usa Saltear 8 min, o presión 2 min más.','Sirve con cilantro y limón.']}]},
+  // ---------- ARROCES ----------
+  {name:'Arroz rojo mexicano',type:'arroz',time:25,k:240,p:5,carbs:45,grasas:5,cost:0.9,porciones:'4',dificultad:'Fácil',
+   tags:'arroz economico mexicana guarnicion',ingredients:'1 taza arroz, 2 jitomates, ¼ cebolla, 1 ajo, 2 tazas caldo, chícharos, aceite',
+   steps:['Fríe el arroz en aceite hasta que suene y dore ligeramente.','Licúa jitomate, cebolla y ajo; agrega al arroz.','Cocina 2 min y añade el caldo caliente y los chícharos.','Tapa y cocina a fuego bajo 15 min sin destapar.','Apaga y deja reposar 5 min; esponja con tenedor.'],
+   method:'estufa',temp:'Estufa: fuego bajo tapado',conservar:'Refrigerador tapado.',duracion:'4 días.',recalentar:'Microondas 2 min con 1 cda de agua tapado.',llevarTrabajo:'Sí, excelente guarnición.',
+   methods:[{method:'instantpot',temp:'Instant Pot: presión alta 6 min',steps:['Saltear el arroz con aceite 3 min.','Agrega el molido y 1½ taza de caldo.','Presión alta 6 min; libera natural 10 min.','Esponja con tenedor.']}]},
+  {name:'Arroz blanco con elote',type:'arroz',time:22,k:250,p:6,carbs:46,grasas:6,cost:0.9,porciones:'4',dificultad:'Fácil',
+   tags:'arroz economico guarnicion blanco',ingredients:'1 taza arroz, 2 tazas caldo, ½ taza granos de elote, 1 ajo, aceite, sal',
+   steps:['Fríe el arroz con el ajo hasta que dore ligero.','Agrega el caldo caliente, el elote y sal.','Tapa y cocina a fuego bajo 15 min sin destapar.','Reposa 5 min y esponja.'],
+   method:'estufa',temp:'Estufa: fuego bajo tapado',conservar:'Refrigerador tapado.',duracion:'4 días.',recalentar:'Microondas 2 min con 1 cda de agua.',llevarTrabajo:'Sí.'},
+  // ---------- ESPAGUETIS Y PASTAS ----------
+  {name:'Espagueti rojo sencillo',type:'pasta',time:20,k:380,p:12,carbs:62,grasas:9,cost:1.4,porciones:'4',dificultad:'Fácil',
+   tags:'pasta espagueti economica rapida ganar peso',ingredients:'250 g espagueti, 3 jitomates, ¼ cebolla, 1 ajo, aceite, queso, caldo',
+   steps:['Cuece el espagueti en agua con sal 8-9 min; escurre.','Licúa jitomate, cebolla y ajo; cuela.','Sofríe el molido en aceite 5 min con un poco de caldo.','Mezcla con el espagueti y ajusta sal.','Sirve con queso rallado.'],
+   method:'estufa',temp:'Estufa: fuego medio',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Microondas 2 min con 1 cda de agua o salsa.',llevarTrabajo:'Sí, en tóper.'},
+  {name:'Espagueti a la crema con pollo',type:'pasta',time:25,k:470,p:24,carbs:55,grasas:17,cost:2.2,porciones:'4',dificultad:'Media',
+   tags:'pasta crema proteina pollo ganar musculo ganar peso',ingredients:'250 g espagueti, 200 g pollo, 1 taza crema, ½ taza leche, queso, elote, mantequilla',
+   steps:['Cuece el espagueti al dente y escurre.','Cocina el pollo en tiras con sal y pimienta.','Mezcla crema, leche y un poco de queso; calienta sin hervir.','Integra el espagueti, el pollo y el elote en la salsa.','Sirve con más queso.'],
+   method:'estufa',temp:'Estufa: fuego bajo-medio',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Microondas 2 min con un chorrito de leche.',llevarTrabajo:'Sí, muy saciante.'},
+  // ---------- POLLO COCIDO / DESHEBRADO ----------
+  {name:'Pollo deshebrado para tacos',type:'pollococido',time:30,k:200,p:30,carbs:3,grasas:7,cost:2.4,porciones:'4',dificultad:'Fácil',
+   tags:'pollo deshebrado proteina meal prep ganar musculo economica',ingredients:'2 pechugas, ¼ cebolla, 1 ajo, sal, laurel',
+   steps:['Hierve la pechuga con cebolla, ajo, laurel y sal 20 min.','Deja entibiar en su caldo 10 min (queda jugoso).','Escurre y deshebra con dos tenedores.','Guarda el caldo para sopas o para recalentar el pollo.'],
+   method:'estufa',temp:'Estufa: hervor suave',conservar:'Refrigerador en un poco de su caldo.',duracion:'4 días en refri, 3 meses congelado.',recalentar:'Sartén con un poco de caldo 3 min, o microondas 90 s.',llevarTrabajo:'Ideal para meal prep: tacos, ensaladas, tortas.',
+   methods:[{method:'instantpot',temp:'Instant Pot: presión alta 12 min',steps:['Pon las pechugas con 1 taza de agua, cebolla, ajo y sal.','Presión alta 12 min; libera natural 5 min.','Deshebra dentro de la olla con la función Saltear apagada.','Reserva el caldo.']}]},
+  {name:'Pechuga a la plancha jugosa',type:'pollococido',time:18,k:180,p:32,carbs:1,grasas:5,cost:2.4,porciones:'2',dificultad:'Fácil',
+   tags:'pollo proteina plancha ganar musculo meal prep rapida',ingredients:'2 pechugas, sal, pimienta, ajo en polvo, 1 cdita aceite, limón',
+   steps:['Aplana un poco la pechuga para grosor parejo.','Sazona con sal, pimienta y ajo en polvo.','Plancha caliente con aceite 4-5 min por lado (interno 74°C).','Deja reposar 3 min antes de cortar para que quede jugosa.'],
+   method:'estufa',temp:'Estufa/plancha: fuego medio-alto · interno 74°C',conservar:'Refrigerador en recipiente tapado.',duracion:'4 días.',recalentar:'Sartén tapado 2 min o microondas 60-80 s (no más, se seca).',llevarTrabajo:'Sí, base de proteína para el día.',
+   methods:[{method:'airfryer',temp:'Air Fryer: 200°C / 12-14 min',steps:['Sazona y rocía aceite.','Precalienta la Air Fryer a 200°C 3 min.','Cocina 12-14 min volteando a la mitad.','Verifica 74°C interno y reposa 3 min.']}]},
+  // ---------- LICUADOS Y AGUAS ----------
+  {name:'Licuado ganador de peso',type:'licuado',time:5,k:520,p:22,carbs:65,grasas:18,cost:2.0,porciones:'1',dificultad:'Fácil',
+   tags:'licuado ganar peso ganar musculo proteina rapido calorico',ingredients:'1 taza leche entera, 1 plátano, ½ taza avena, 2 cdas crema de cacahuate, 1 cda miel, hielo',
+   steps:['Pon todos los ingredientes en la licuadora.','Licúa 40 seg hasta que quede terso.','Sirve inmediato; agrega más leche si lo quieres más ligero.'],
+   method:'licuadora',temp:'Frío',conservar:'Mejor recién hecho.',duracion:'12 h en refri (se separa, agita).',recalentar:'No aplica, se toma frío.',llevarTrabajo:'Sí, en botella con hielo.'},
+  {name:'Agua de jamaica natural',type:'agua',time:15,k:90,p:0,carbs:22,grasas:0,cost:0.6,porciones:'4',dificultad:'Fácil',
+   tags:'agua fresca economica jamaica hidratacion',ingredients:'1 taza flor de jamaica, 6 tazas agua, azúcar al gusto',
+   steps:['Hierve 2 tazas de agua con la jamaica 5 min.','Deja reposar 10 min y cuela.','Mezcla el concentrado con 4 tazas de agua fría.','Endulza al gusto y sirve con hielo.'],
+   method:'estufa',temp:'Estufa: hervir 5 min',conservar:'Refrigerador en jarra tapada.',duracion:'3 días.',recalentar:'No aplica, se toma fría.',llevarTrabajo:'Sí, en botella.'},
+  {name:'Yogur griego con granola y fruta',type:'snack',time:5,k:330,p:22,carbs:40,grasas:9,cost:2.2,porciones:'1',dificultad:'Fácil',
+   tags:'snack proteina rapido sin cocinar ganar musculo desayuno',ingredients:'1 taza yogur griego natural, ½ taza granola, ½ taza fruta, 1 cda miel',
+   steps:['Sirve el yogur en un tazón o frasco.','Agrega la granola y la fruta picada.','Termina con miel.','Si es para llevar, pon la granola aparte y mézclala al momento.'],
+   method:'sin cocinar',temp:'Frío',conservar:'Refrigerador; granola aparte para que no se ablande.',duracion:'2 días (yogur), granola seca aparte.',recalentar:'No aplica.',llevarTrabajo:'Sí, en frasco; ideal media mañana.'}
+].forEach(addFull);
+
 // ===== v44 Fase A: id estable de recetas + campos opcionales + migración de favoritos =====
 // Genera un identificador estable a partir de tipo+nombre (sin acentos ni símbolos).
 function recipeSlug(r){
@@ -2305,12 +2384,19 @@ ${visualGuide('recetas')}
 </div>
 
 <div class="card"><h3 style="margin-top:0">🔎 Buscar recetas</h3><div class="grid card">
-  <div><label>Momento o tipo</label><select id="recFilter" onchange="_recipePage=1;renderRecipes()"><option value="todas">Todos</option><option value="desayuno">Desayunos</option><option value="comida">Comidas</option><option value="cena">Cenas</option><option value="licuado">Licuados</option><option value="snack">Snacks</option><option value="fruta">Frutas</option><option value="agua">Aguas frescas</option><option value="hotcake">Hotcakes</option><option value="avena">Avenas</option><option value="pan">Panes</option><option value="salsa">Salsas</option><option value="aderezo">Aderezos</option><option value="especia">Sazonadores</option><option value="suero">Sueros</option></select></div>
+  <div><label>Momento o tipo</label><select id="recFilter" onchange="_recipePage=1;renderRecipes()"><option value="todas">Todos</option><option value="desayuno">Desayunos</option><option value="comida">Comidas</option><option value="cena">Cenas</option><option value="sopa">Sopas</option><option value="arroz">Arroces</option><option value="pasta">Espaguetis y pastas</option><option value="pollococido">Pollo cocido</option><option value="licuado">Licuados</option><option value="postre">Postres</option><option value="snack">Snacks</option><option value="fruta">Frutas</option><option value="agua">Aguas frescas</option><option value="hotcake">Hotcakes</option><option value="avena">Avenas</option><option value="pan">Panes</option><option value="salsa">Salsas</option><option value="aderezo">Aderezos</option><option value="especia">Sazonadores</option><option value="suero">Sueros</option></select></div>
   <div><label>Presupuesto</label><select id="recBudget" onchange="_recipePage=1;renderRecipes()"><option value="all">Cualquier precio</option><option value="cheap">Menos de $3 por porción</option><option value="20day">Ideas para menos de $20 al día</option></select></div>
   <div><label>Buscar</label><input id="recSearch" placeholder="pollo, huevo, arroz, frijol..." oninput="_recipePage=1;renderRecipes()"></div>
   <div><label>Ordenar por</label><select id="recSort" onchange="_recipePage=1;renderRecipes()"><option value="none">Normal</option><option value="kcalDesc">Más calorías primero</option><option value="kcalAsc">Menos calorías primero</option><option value="protDesc">Más proteína primero</option><option value="costAsc">Más barato primero</option><option value="timeAsc">Más rápido primero</option></select></div>
 </div></div>
 
+<div class="row" style="gap:6px;flex-wrap:wrap;margin:4px 0 2px">
+  <button class="btn" onclick="recipeQuickFilter('economicas')">💰 Económicas</button>
+  <button class="btn" onclick="recipeQuickFilter('rapidas')">⚡ Rápidas</button>
+  <button class="btn" onclick="recipeQuickFilter('ganarpeso')">📈 Ganar peso</button>
+  <button class="btn" onclick="recipeQuickFilter('ganarmusculo')">💪 Ganar músculo</button>
+  <button class="btn" onclick="recipeQuickFilter('reset')">↺ Todo</button>
+</div>
 <div class="row" style="justify-content:space-between;align-items:center;gap:8px;margin:12px 0 6px">
   <strong id="recMethodLabel">Todas las recetas</strong>
   <button class="btn${window._portableFormat==='favoritas'?' primary':''}" id="favFilterBtn" style="white-space:nowrap" onclick="toggleFavoritesFilter()">⭐ Favoritas${(state.recipeFavorites&&state.recipeFavorites.length)?' ('+state.recipeFavorites.length+')':''}</button>
@@ -2738,7 +2824,7 @@ function foodPickPool(goal){
   return {pool,kw};
 }
 function mealTypeLabel(type){
-  return ({desayuno:'🌅 Desayuno',comida:'🍽️ Comida',cena:'🌙 Cena',licuado:'🥤 Licuado',snack:'🍿 Snack / merienda',fruta:'🍓 Fruta',agua:'💧 Agua fresca',bebida:'☕ Bebida',suero:'💧 Suero',especia:'🧂 Sazonador',salsa:'🌶️ Salsa',aderezo:'🥗 Aderezo',hotcake:'🥞 Hotcake',avena:'🥣 Avena',pan:'🍞 Pan'})[type]||('🍽️ '+(type?type.charAt(0).toUpperCase()+type.slice(1):'Receta'));
+  return ({desayuno:'🌅 Desayuno',comida:'🍽️ Comida',cena:'🌙 Cena',licuado:'🥤 Licuado',snack:'🍿 Snack / merienda',fruta:'🍓 Fruta',agua:'💧 Agua fresca',bebida:'☕ Bebida',suero:'💧 Suero',especia:'🧂 Sazonador',salsa:'🌶️ Salsa',aderezo:'🥗 Aderezo',hotcake:'🥞 Hotcake',avena:'🥣 Avena',pan:'🍞 Pan',postre:'🍮 Postre',sopa:'🍲 Sopa',arroz:'🍚 Arroz',pasta:'🍝 Pasta',pollococido:'🍗 Pollo cocido'})[type]||('🍽️ '+(type?type.charAt(0).toUpperCase()+type.slice(1):'Receta'));
 }
 function typeBadge(type){
   return `<span style="display:inline-block;background:#eaf5ef;color:#15704f;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800;margin-bottom:5px">${mealTypeLabel(type)}</span><br>`;
@@ -7473,7 +7559,7 @@ function renderRecipes(){
   el.innerHTML=(function(){
     if(arr.length==0) return '<div class="warn">Sin recetas con esos filtros. Prueba ampliar la búsqueda.</div>';
     var cardHTML=r=>{
-      let carb=getCarb(r), fat=getFat(r), ing=getIngredients(r), shop=recipeShoppingItems(r), shopText='Lista de compra - '+r.name+'\\n'+recipeShoppingItems(r).map(x=>'- '+x).join('\\n'), time=getTiming(r);
+      let carb=(r.carbs!=null?r.carbs:getCarb(r)), fat=(r.grasas!=null?r.grasas:getFat(r)), ing=getIngredients(r), shop=recipeShoppingItems(r), shopText='Lista de compra - '+r.name+'\\n'+recipeShoppingItems(r).map(x=>'- '+x).join('\\n'), time=getTiming(r);
       let pct_p=Math.round(r.p*4/r.k*100), pct_c=Math.round(carb*4/r.k*100), pct_f=Math.round(fat*9/r.k*100);
       let icon=r.type==='licuado'?smoothieIcon(r):r.type==='desayuno'?'🍳':r.type==='cena'?'🌙':r.type==='snack'?'🥜':r.type==='bebida'||r.type==='agua'?'🧊':r.type==='salsa'?'🌶️':r.type==='fruta'?'🍓':r.type==='hotcake'?'🥞':r.type==='avena'?'🥣':r.type==='pan'?'🍞':r.type==='aderezo'?'🥗':r.type==='especia'?'🧂':r.type==='suero'?'💧':r.method.toLowerCase().includes('horno')?'♨️':r.method.toLowerCase().includes('thermomix')?'🤖':'🍲';
       let sauce=getRecipeSaucePair(r);
@@ -7490,6 +7576,8 @@ function renderRecipes(){
           <span style="background:#fff3e0;border-radius:8px;padding:5px 10px;font-size:13px">🔪 Prep: ${time.prep} min</span>
           <span style="background:#fce4ec;border-radius:8px;padding:5px 10px;font-size:13px">🔥 Cocción: ${time.cook} min</span>
           ${r.temp&&r.temp.length>3?'<span style="background:#ffe0b2;border-radius:8px;padding:5px 10px;font-size:13px;font-weight:800">🌡️ '+r.temp+'</span>':''}
+          ${r.dificultad?'<span style="background:#ede7f6;border-radius:8px;padding:5px 10px;font-size:13px;font-weight:800">📊 '+safeText(r.dificultad)+'</span>':''}
+          ${r.porciones?'<span style="background:#e0f2f1;border-radius:8px;padding:5px 10px;font-size:13px;font-weight:800">🍽️ '+safeText(r.porciones)+' porciones</span>':''}
           ${time.rest>0?'<span style="background:#e3f2fd;border-radius:8px;padding:5px 10px;font-size:13px">⏳ Reposo: '+time.rest+' min</span>':''}
         </div>
 
@@ -7585,6 +7673,15 @@ function renderRecipes(){
           }).join('')}</div>
         </div>
 
+        ${(function(){var extra=[];
+          if(r.conservar)extra.push(['🧊 Cómo guardar',r.conservar]);
+          if(r.duracion)extra.push(['⏳ Cuánto dura',r.duracion]);
+          if(r.recalentar)extra.push(['♨️ Cómo recalentar',r.recalentar]);
+          if(r.llevarTrabajo)extra.push(['🥡 Llevar al trabajo',r.llevarTrabajo]);
+          if(!extra.length)return '';
+          return '<div class="card" style="background:#f4f9ff;border-color:#bcd8f2;padding:10px;margin-top:12px"><b style="color:#1b5a99">🧺 Guardar y llevar</b><div style="margin-top:6px">'+extra.map(function(e){return '<div style="font-size:13px;margin:4px 0"><b>'+e[0]+':</b> '+safeText(e[1])+'</div>';}).join('')+'</div></div>';
+        })()}
+
         <!-- Tags + method -->
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
           <span style="background:#e8f5e9;border-radius:99px;padding:4px 10px;font-size:12px;font-weight:800">🍳 ${r.method}</span>
@@ -7596,8 +7693,8 @@ function renderRecipes(){
     var grouped=_grouped;
     if(grouped){
       // Agrupar por categoría en secciones colapsables
-      var catNames={desayuno:'🍳 Desayunos',comida:'🍲 Comidas',cena:'🌙 Cenas',licuado:'🥤 Licuados',bebida:'🧊 Bebidas',agua:'🧊 Aguas frescas',snack:'🥜 Snacks',cafe:'☕ Cafés',salsa:'🌶️ Salsas',aderezo:'🥗 Aderezos',fruta:'🍓 Frutas',hotcake:'🥞 Hotcakes',avena:'🥣 Avenas',pan:'🍞 Panes',thermomix:'🤖 Thermomix',horno:'🫕 Al horno'};
-      var order=['licuado','desayuno','comida','cena','snack','bebida','agua','cafe','avena','hotcake','pan','fruta','salsa','aderezo'];
+      var catNames={desayuno:'🍳 Desayunos',comida:'🍲 Comidas',cena:'🌙 Cenas',sopa:'🍲 Sopas',arroz:'🍚 Arroces',pasta:'🍝 Espaguetis y pastas',pollococido:'🍗 Pollo cocido',licuado:'🥤 Licuados',bebida:'🧊 Bebidas',agua:'🧊 Aguas frescas',snack:'🥜 Snacks',postre:'🍮 Postres',cafe:'☕ Cafés',salsa:'🌶️ Salsas',aderezo:'🥗 Aderezos',fruta:'🍓 Frutas',hotcake:'🥞 Hotcakes',avena:'🥣 Avenas',pan:'🍞 Panes',thermomix:'🤖 Thermomix',horno:'🫕 Al horno'};
+      var order=['desayuno','comida','cena','sopa','arroz','pasta','pollococido','licuado','snack','postre','bebida','agua','cafe','avena','hotcake','pan','fruta','salsa','aderezo'];
       var byCat={};
       arr.forEach(function(r){ (byCat[r.type]=byCat[r.type]||[]).push(r); });
       var cats=Object.keys(byCat).sort(function(a,b){ var ia=order.indexOf(a),ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
@@ -7657,6 +7754,17 @@ function selectRecipeMethod(idx,key){
     if(altBlock)altBlock.innerHTML='<div style="font-weight:900;font-size:13px;margin:6px 0">'+sel.icon+' Preparación en '+safeText(sel.label)+(sel.temp?' · '+safeText(sel.temp):'')+'</div>'+
       sel.steps.map((x,i)=>'<label class="step" style="cursor:pointer"><input type="checkbox" style="margin-right:8px" onclick="this.closest(\'.step\').classList.toggle(\'done\',this.checked)"><span class="step-text"><span class="step-num">Paso '+(i+1)+':</span> '+safeText(x)+'</span></label>').join('');
   }
+}
+// Filtros rápidos por objetivo (usan los controles existentes de tipo/presupuesto/orden).
+function recipeQuickFilter(kind){
+  var f=document.getElementById('recFilter'), b=document.getElementById('recBudget'), s=document.getElementById('recSort'), q=document.getElementById('recSearch');
+  if(q)q.value='';
+  if(kind==='economicas'){if(b)b.value='cheap';if(s)s.value='costAsc';}
+  else if(kind==='rapidas'){if(s)s.value='timeAsc';}
+  else if(kind==='ganarpeso'){if(s)s.value='kcalDesc';}
+  else if(kind==='ganarmusculo'){if(s)s.value='protDesc';}
+  else if(kind==='reset'){if(f)f.value='todas';if(b)b.value='all';if(s)s.value='none';window._portableFormat='todas';}
+  _recipePage=1;renderRecipes();
 }
 // Filtro visible de favoritas (funciona en modo Personal y Profesional).
 function toggleFavoritesFilter(){
@@ -9811,7 +9919,7 @@ function importData(){
       let summary=`Peso: ${(incoming.weight||[]).length}\\nGastos: ${(incoming.expenses||[]).length}\\nComidas registradas: ${(incoming.meals||[]).length}\\nFotos de progreso: ${(incoming.progressPhotos||[]).length}\\n\\nReemplazar los datos actuales?`;
       if(!confirm(summary))return;
       await saveVersionSnapshot(JSON.stringify(state),'antes-importar-'+new Date().toISOString());
-      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'44.2.0';save();render();alert('Respaldo importado correctamente.');
+      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'44.3.0';save();render();alert('Respaldo importado correctamente.');
     }catch(error){alert('No se pudo importar: '+error.message)}
   };
   reader.readAsText(file);
@@ -10391,7 +10499,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='44.2.0';
+    window.HM_APP_VERSION='44.3.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
