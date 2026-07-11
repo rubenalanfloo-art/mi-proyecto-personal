@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='44.1.0';
+  window.HM_APP_VERSION='44.2.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -492,6 +492,7 @@ state.dating.photoReviews=state.dating.photoReviews||[];
 state.recipeReminders=state.recipeReminders||[];
 state.progressPhotos=state.progressPhotos||[];
 state.recipeFavorites=state.recipeFavorites||[];
+state.kitchenTools=state.kitchenTools||{estufa:true,horno:true,microondas:true,licuadora:true,thermomix:true,instantpot:true,airfryer:true,vaporera:true};
 state.recipeRatings=state.recipeRatings||{};
 state.recipeRecent=state.recipeRecent||[];
 state.foodInventory=state.foodInventory||[];
@@ -572,7 +573,7 @@ function tryLoadIDB(){
   let previous=Number(state.schemaVersion||0);
 if(_storedStateRaw&&previous<APP_SCHEMA_VERSION)saveVersionSnapshot(_storedStateRaw,'antes-v24-'+new Date().toISOString());
   state.schemaVersion=APP_SCHEMA_VERSION;
-state.appVersion=window.HM_APP_VERSION||'44.1.0';
+state.appVersion=window.HM_APP_VERSION||'44.2.0';
   // v43: dar id/client_id/updated_at estables a los pesos existentes SIN borrar nada.
   try{if(typeof normalizeAllWeights==='function')normalizeAllWeights();}catch(e){}
   safeStorage.set('pp_full',JSON.stringify(state));
@@ -2219,9 +2220,72 @@ function isRecipeFav(index){let id=recipeIdOf(index);return id!=null&&Array.isAr
   try{safeStorage.set('pp_full',JSON.stringify(state));}catch(e){}
 })();
 
+// ===== v44.2 Fase B: Mi cocina + métodos de preparación por receta =====
+const KITCHEN_METHODS={
+  estufa:{label:'Estufa',icon:'🔥'},
+  horno:{label:'Horno',icon:'♨️'},
+  microondas:{label:'Microondas',icon:'📟'},
+  licuadora:{label:'Licuadora',icon:'🥤'},
+  thermomix:{label:'Thermomix TM5',icon:'🤖'},
+  instantpot:{label:'Instant Pot',icon:'🍲'},
+  airfryer:{label:'Air Fryer',icon:'🌀'},
+  vaporera:{label:'Vaporera de huevos',icon:'🥚'},
+  sincocinar:{label:'Sin cocinar',icon:'🥗'}
+};
+const KITCHEN_TOOLS_ORDER=['estufa','horno','microondas','licuadora','thermomix','instantpot','airfryer','vaporera'];
+// Traduce el texto de método de una receta a una llave de herramienta.
+function methodKeyOf(m){m=String(m||'').toLowerCase();
+  if(m.includes('sin cocinar')||m==='sincocinar')return 'sincocinar';
+  if(m.includes('microond'))return 'microondas';
+  if(m.includes('licuad'))return 'licuadora';
+  if(m.includes('thermomix'))return 'thermomix';
+  if(m.includes('instant'))return 'instantpot';
+  if(m.includes('air'))return 'airfryer';
+  if(m.includes('vapor'))return 'vaporera';
+  if(m.includes('horno'))return 'horno';
+  if(m.includes('comal')||m.includes('olla')||m.includes('estufa')||m.includes('sartén')||m.includes('sarten')||m.includes('fuego'))return 'estufa';
+  return 'estufa';
+}
+function methodEnabled(key){if(key==='sincocinar')return true;return !!(state.kitchenTools&&state.kitchenTools[key]);}
+// Devuelve los métodos de una receta CON pasos reales (nativo + methods[]), sin duplicar por llave.
+function recipeMethods(r){
+  let list=[],seen={};
+  let nk=methodKeyOf(r.method);
+  list.push({key:nk,label:(KITCHEN_METHODS[nk]||{}).label||r.method,icon:(KITCHEN_METHODS[nk]||{}).icon||'🍲',steps:r.steps,temp:r.temp||'',native:true});
+  seen[nk]=1;
+  (r.methods||[]).forEach(mm=>{
+    if(!mm||!Array.isArray(mm.steps)||!mm.steps.length)return; // SOLO métodos con pasos reales
+    let k=methodKeyOf(mm.method||mm.key);
+    if(seen[k])return;seen[k]=1;
+    list.push({key:k,label:(KITCHEN_METHODS[k]||{}).label||mm.method,icon:(KITCHEN_METHODS[k]||{}).icon||'🍽️',steps:mm.steps,temp:mm.temp||'',native:false});
+  });
+  return list;
+}
+function enabledRecipeMethods(r){return recipeMethods(r).filter(x=>methodEnabled(x.key));}
+// Ejemplos sembrados (Fase B): unas pocas recetas con métodos extra reales para demostrar el selector.
+(function seedRecipeMethods(){
+  function find(kw){return baseRecipes.find(r=>String(r.name||'').toLowerCase().includes(kw));}
+  function addM(r,method,steps,temp){if(r&&Array.isArray(steps)&&steps.length){(r.methods=r.methods||[]).push({method,steps,temp:temp||''});}}
+  addM(find('avena'),'microondas',
+    ['En un tazón apto para microondas mezcla la avena con la leche.','Calienta 2 min a potencia alta.','Revuelve; agrega el plátano en rodajas y la miel.','Si la quieres más espesa, 30 s más. Deja reposar 1 min.'],
+    'Microondas: 2–2½ min potencia alta');
+  addM(find('pollo'),'instantpot',
+    ['Sella el pollo con sal en modo Saltear 3 min por lado.','Agrega ½ taza de caldo y tus especias.','Tapa, sella y cocina a presión alta 12 min.','Libera presión 5 min y desmenuza.'],
+    'Instant Pot: presión alta 12 min');
+  addM(find('pollo'),'airfryer',
+    ['Sazona el pollo y rocía un poco de aceite.','Precalienta la Air Fryer a 200°C (390°F) 3 min.','Cocina 12–14 min, voltea a la mitad.','Verifica que el interior llegue a 74°C.'],
+    'Air Fryer: 200°C / 12–14 min');
+  var huevo=find('huevo cocido')||find('huevos cocidos')||find('huevo duro');
+  addM(huevo,'vaporera',
+    ['Pon agua en la base de la vaporera de huevos.','Coloca los huevos y tapa.','Enciende: 12–13 min para huevo duro, 9 min para tibio.','Pásalos a agua fría 2 min y pela.'],
+    'Vaporera: 12–13 min (duro)');
+})();
+
 function secRecetas(){return `
 <h2>🌮 Recetas mexicanas fáciles</h2>
 <p class="muted">Elige rápido qué necesitas comer. Las categorías largas siguen guardadas en avanzado.</p>
+${state.kitchenConfigured?'':'<div class="warn" style="margin:8px 0"><b>Configura primero Mi cocina</b> 👇 para que la app te muestre solo los métodos de preparación que puedes usar.</div>'}
+${miCocinaPanelHTML()}
 ${visualGuide('recetas')}
 
 <div class="food-brain">
@@ -2885,6 +2949,7 @@ function secCentro(){
     <div class="mini"><span class="muted">Prioridades</span><div class="kpi">${todayTasks.length}</div></div>
     <div class="mini"><span class="muted">Gastado hoy</span><div class="kpi">${money(spent)}</div></div>
   </div>
+  ${miCocinaPanelHTML()}
   <div class="card" style="border:2px solid #9dd5b4;background:#f7fff9">
     <h3 style="margin-top:0">Botones rápidos</h3>
     <p class="muted">Estos son los accesos que sí sirven diario. Los ajustes y herramientas largas quedan guardados abajo.</p>
@@ -7376,6 +7441,7 @@ function renderRecipes(){
     if(s&&!searchable.includes(s)) return false;
     if(pf==='favoritas'&&!isRecipeFav(baseRecipes.indexOf(r)))return false;
     if(pf!=='todas'&&pf!=='favoritas'&&!r.tags.toLowerCase().includes(pf))return false;
+    if(enabledRecipeMethods(r).length===0)return false; // sin ningún método disponible en Mi cocina
     return true;
   });
   if(b=='cheap') arr=arr.filter(r=>r.cost<3);
@@ -7500,8 +7566,14 @@ function renderRecipes(){
           ${renderThermomixPlan(r)}
         </details>
 
+        <!-- Preparar receta: selector de método (Fase B) -->
+        ${(function(){var idx=baseRecipes.indexOf(r);var ms=enabledRecipeMethods(r);var nk=methodKeyOf(r.method);
+          if(ms.length<=1) return '';
+          return '<div style="margin-bottom:10px"><div style="font-weight:900;font-size:13px;margin-bottom:6px">👨‍🍳 PREPARAR RECETA — elige método</div><div id="prepMethods_'+idx+'" class="row" style="gap:6px;flex-wrap:wrap">'+ms.map(function(m){return '<button class="btn prep-method-chip'+(m.key===nk?' primary':'')+'" data-key="'+m.key+'" onclick="selectRecipeMethod('+idx+',\''+m.key+'\')">'+m.icon+' '+m.label+'</button>';}).join('')+'</div></div>';
+        })()}
+        <div id="methodSteps_${baseRecipes.indexOf(r)}"></div>
         <!-- Steps -->
-        <div>
+        <div id="nativeSteps_${baseRecipes.indexOf(r)}">
           <div style="font-weight:900;font-size:13px;margin-bottom:6px">📋 PREPARACIÓN — toca cada paso al hacerlo</div>
           <div class="prep-progress"><span>Tu avance</span><span class="prep-progress-num" id="prepNum_${baseRecipes.indexOf(r)}">${(function(){var sp=(state.recipeStepProgress&&state.recipeStepProgress[baseRecipes.indexOf(r)+'']&&state.recipeStepProgress[baseRecipes.indexOf(r)+''].date===todayISO())?state.recipeStepProgress[baseRecipes.indexOf(r)+''].done:{};return Object.keys(sp).filter(function(k){return sp[k];}).length;})()} de ${r.steps.length}</span></div>
           <div id="prepSteps_${baseRecipes.indexOf(r)}">${r.steps.map((x,i)=>{
@@ -7548,6 +7620,43 @@ function toggleFavoriteRecipe(key){
   let i=state.recipeFavorites.indexOf(id);
   if(i>=0)state.recipeFavorites.splice(i,1);else state.recipeFavorites.push(id);
   save();renderRecipes();
+}
+// ----- Mi cocina (Fase B): panel de herramientas + selector de método por receta -----
+function miCocinaPanelHTML(){
+  let k=state.kitchenTools||{};
+  return `<div class="card" style="border:2px solid #9dd5b4;background:#f7fff9">
+    <h3 style="margin-top:0">🍳 Mi cocina</h3>
+    <p class="muted" style="margin:2px 0 10px">Marca las herramientas que tienes. En cada receta verás solo los métodos de preparación que puedes usar.</p>
+    <div class="row" style="gap:6px;flex-wrap:wrap">
+      ${KITCHEN_TOOLS_ORDER.map(key=>{let m=KITCHEN_METHODS[key];let on=!!k[key];return `<button class="btn${on?' primary':''}" data-tool="${key}" onclick="toggleKitchenTool('${key}')">${m.icon} ${m.label}${on?' ✓':''}</button>`}).join('')}
+    </div>
+  </div>`;
+}
+function toggleKitchenTool(key){
+  if(!state.kitchenTools)state.kitchenTools={};
+  state.kitchenTools[key]=!state.kitchenTools[key];
+  state.kitchenConfigured=true;
+  save();
+  document.querySelectorAll('[data-tool]').forEach(b=>{let on=!!state.kitchenTools[b.dataset.tool];let m=KITCHEN_METHODS[b.dataset.tool];if(m){b.className='btn'+(on?' primary':'');b.innerHTML=m.icon+' '+m.label+(on?' ✓':'');}});
+  try{renderRecipes()}catch(e){}
+}
+// Cambia el método mostrado dentro de una receta (los pasos cambian según el método).
+function selectRecipeMethod(idx,key){
+  let r=baseRecipes[idx];if(!r)return;
+  let methods=enabledRecipeMethods(r);
+  let sel=methods.find(m=>m.key===key)||methods[0];if(!sel)return;
+  let nativeKey=methodKeyOf(r.method);
+  document.querySelectorAll('#prepMethods_'+idx+' .prep-method-chip').forEach(c=>{c.className='btn prep-method-chip'+(c.dataset.key===sel.key?' primary':'')});
+  let nativeBlock=document.getElementById('nativeSteps_'+idx);
+  let altBlock=document.getElementById('methodSteps_'+idx);
+  if(sel.native||sel.key===nativeKey){
+    if(nativeBlock)nativeBlock.style.display='';
+    if(altBlock)altBlock.innerHTML='';
+  }else{
+    if(nativeBlock)nativeBlock.style.display='none';
+    if(altBlock)altBlock.innerHTML='<div style="font-weight:900;font-size:13px;margin:6px 0">'+sel.icon+' Preparación en '+safeText(sel.label)+(sel.temp?' · '+safeText(sel.temp):'')+'</div>'+
+      sel.steps.map((x,i)=>'<label class="step" style="cursor:pointer"><input type="checkbox" style="margin-right:8px" onclick="this.closest(\'.step\').classList.toggle(\'done\',this.checked)"><span class="step-text"><span class="step-num">Paso '+(i+1)+':</span> '+safeText(x)+'</span></label>').join('');
+  }
 }
 // Filtro visible de favoritas (funciona en modo Personal y Profesional).
 function toggleFavoritesFilter(){
@@ -9702,7 +9811,7 @@ function importData(){
       let summary=`Peso: ${(incoming.weight||[]).length}\\nGastos: ${(incoming.expenses||[]).length}\\nComidas registradas: ${(incoming.meals||[]).length}\\nFotos de progreso: ${(incoming.progressPhotos||[]).length}\\n\\nReemplazar los datos actuales?`;
       if(!confirm(summary))return;
       await saveVersionSnapshot(JSON.stringify(state),'antes-importar-'+new Date().toISOString());
-      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'44.1.0';save();render();alert('Respaldo importado correctamente.');
+      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'44.2.0';save();render();alert('Respaldo importado correctamente.');
     }catch(error){alert('No se pudo importar: '+error.message)}
   };
   reader.readAsText(file);
@@ -10282,7 +10391,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='44.1.0';
+    window.HM_APP_VERSION='44.2.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
