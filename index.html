@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='43.0.0';
+  window.HM_APP_VERSION='44.0.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -425,7 +425,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       </div>
     </div>
     <div class="appStatusBox">
-      <span class="versionChip">v43</span>
+      <span class="versionChip">v44</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -572,7 +572,7 @@ function tryLoadIDB(){
   let previous=Number(state.schemaVersion||0);
 if(_storedStateRaw&&previous<APP_SCHEMA_VERSION)saveVersionSnapshot(_storedStateRaw,'antes-v24-'+new Date().toISOString());
   state.schemaVersion=APP_SCHEMA_VERSION;
-state.appVersion=window.HM_APP_VERSION||'43.0.0';
+state.appVersion=window.HM_APP_VERSION||'44.0.0';
   // v43: dar id/client_id/updated_at estables a los pesos existentes SIN borrar nada.
   try{if(typeof normalizeAllWeights==='function')normalizeAllWeights();}catch(e){}
   safeStorage.set('pp_full',JSON.stringify(state));
@@ -2185,6 +2185,40 @@ function openThermomixGuide(){
 // Precios ajustados a Maui/Hawái 2026 (estimado): la comida en Maui cuesta ~30% más que el mainland por el envío a la isla.
 baseRecipes.forEach(r=>{ if(typeof r.cost==='number') r.cost=Math.round(r.cost*1.3*100)/100; });
 
+// ===== v44 Fase A: id estable de recetas + campos opcionales + migración de favoritos =====
+// Genera un identificador estable a partir de tipo+nombre (sin acentos ni símbolos).
+function recipeSlug(r){
+  return (String(r.type||'')+'-'+String(r.name||'')).toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60);
+}
+// Asigna id estable y añade campos NUEVOS opcionales (vacíos) sin tocar las definiciones existentes.
+(function assignRecipeIds(){
+  let seen={};
+  baseRecipes.forEach(r=>{
+    let id=recipeSlug(r)||'receta';
+    if(seen[id]){seen[id]++;id=id+'-'+seen[id];}else{seen[id]=1;}
+    r.id=id;
+    if(r.porciones==null)r.porciones='';
+    if(r.carbs==null)r.carbs=null;
+    if(r.grasas==null)r.grasas=null;
+    if(r.dificultad==null)r.dificultad='';
+    if(r.conservar==null)r.conservar='';
+    if(r.duracion==null)r.duracion='';
+    if(r.recalentar==null)r.recalentar='';
+    if(r.llevarTrabajo==null)r.llevarTrabajo='';
+  });
+})();
+function recipeIdOf(index){let r=baseRecipes[index];return r?r.id:null;}
+function isRecipeFav(index){let id=recipeIdOf(index);return id!=null&&Array.isArray(state.recipeFavorites)&&state.recipeFavorites.includes(id);}
+// Migra favoritos guardados por POSICIÓN (formato viejo) a id estable. No destructivo.
+(function migrateRecipeFavorites(){
+  let f=state.recipeFavorites;if(!Array.isArray(f)||!f.length)return;
+  if(!f.some(x=>typeof x==='number'))return; // ya están en formato id
+  state.recipeFavorites=f.map(x=>typeof x==='number'?recipeIdOf(x):x).filter(Boolean);
+  try{safeStorage.set('pp_full',JSON.stringify(state));}catch(e){}
+})();
+
 function secRecetas(){return `
 <h2>🌮 Recetas mexicanas fáciles</h2>
 <p class="muted">Elige rápido qué necesitas comer. Las categorías largas siguen guardadas en avanzado.</p>
@@ -2671,7 +2705,7 @@ function renderFoodPicks(){
   if(!pool.length){out.innerHTML='<div class="muted">No hay recetas guardadas para este objetivo.</div>';return}
   let n=Math.min(4,pool.length),start=((st.offset||0)%pool.length+pool.length)%pool.length,idxs=[];
   for(let j=0;j<n;j++)idxs.push(pool[(start+j)%pool.length]);
-  out.innerHTML=`<div class="grid">${idxs.map(i=>{let r=baseRecipes[i],fav=state.recipeFavorites.includes(i);return `<div class="item">${typeBadge(r.type)}<b>${safeText(r.name)}</b><br>${r.k} kcal · P ${r.p}g · ${money(r.cost||0)}${whenLine(r)}<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn primary" style="padding:6px 10px;font-size:13px" onclick="logRecipeAsMeal(${i})">✅ Comí esto</button><button class="btn ${fav?'primary':''}" style="padding:6px 10px;font-size:13px" onclick="saveFoodPick(${i})">${fav?'★ Guardada':'⭐ Guardar'}</button></div></div>`}).join('')}</div>`;
+  out.innerHTML=`<div class="grid">${idxs.map(i=>{let r=baseRecipes[i],fav=isRecipeFav(i);return `<div class="item">${typeBadge(r.type)}<b>${safeText(r.name)}</b><br>${r.k} kcal · P ${r.p}g · ${money(r.cost||0)}${whenLine(r)}<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn primary" style="padding:6px 10px;font-size:13px" onclick="logRecipeAsMeal(${i})">✅ Comí esto</button><button class="btn ${fav?'primary':''}" style="padding:6px 10px;font-size:13px" onclick="saveFoodPick(${i})">${fav?'★ Guardada':'⭐ Guardar'}</button></div></div>`}).join('')}</div>`;
   renderPlanShopping();
 }
 function refreshFoodPicks(){
@@ -2680,8 +2714,10 @@ function refreshFoodPicks(){
   renderFoodPicks();
 }
 function saveFoodPick(i){
-  let k=state.recipeFavorites.indexOf(i);
-  if(k>=0)state.recipeFavorites.splice(k,1);else state.recipeFavorites.push(i);
+  let id=recipeIdOf(i);if(id==null)return;
+  if(!Array.isArray(state.recipeFavorites))state.recipeFavorites=[];
+  let k=state.recipeFavorites.indexOf(id);
+  if(k>=0)state.recipeFavorites.splice(k,1);else state.recipeFavorites.push(id);
   save();renderFoodPicks();
   if(document.getElementById('foodSimilarOut')&&document.getElementById('foodSimilarOut').innerHTML)showSimilarInline();
   if(document.getElementById('fridgeRealMatches'))renderFridgeRealMatches();
@@ -2692,7 +2728,7 @@ function showSimilarInline(){
   let st=window._foodPicks||{pool:[]},pool=st.pool||[];
   if(!pool.length){out.innerHTML='<div class="muted" style="margin-top:8px">No hay recetas parecidas.</div>';return}
   let idxs=pool.slice(0,12);
-  out.innerHTML=`<div class="card" style="margin-top:8px;background:#f7fff9"><b>🍽️ Recetas parecidas (${idxs.length})</b><p class="muted" style="margin:4px 0 8px;font-size:12px">Toca ⭐ para guardarla o ✅ para registrarla. Cierra con el mismo botón.</p><div class="grid">${idxs.map(i=>{let r=baseRecipes[i],fav=state.recipeFavorites.includes(i);return `<div class="mini">${typeBadge(r.type)}<b>${safeText(r.name)}</b><br>${r.k} kcal · P ${r.p}g · ${money(r.cost||0)}${whenLine(r)}<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn primary" style="padding:5px 9px;font-size:12px" onclick="logRecipeAsMeal(${i})">✅ Comí</button><button class="btn ${fav?'primary':''}" style="padding:5px 9px;font-size:12px" onclick="saveFoodPick(${i})">${fav?'★':'⭐'}</button></div></div>`}).join('')}</div></div>`;
+  out.innerHTML=`<div class="card" style="margin-top:8px;background:#f7fff9"><b>🍽️ Recetas parecidas (${idxs.length})</b><p class="muted" style="margin:4px 0 8px;font-size:12px">Toca ⭐ para guardarla o ✅ para registrarla. Cierra con el mismo botón.</p><div class="grid">${idxs.map(i=>{let r=baseRecipes[i],fav=isRecipeFav(i);return `<div class="mini">${typeBadge(r.type)}<b>${safeText(r.name)}</b><br>${r.k} kcal · P ${r.p}g · ${money(r.cost||0)}${whenLine(r)}<div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn primary" style="padding:5px 9px;font-size:12px" onclick="logRecipeAsMeal(${i})">✅ Comí</button><button class="btn ${fav?'primary':''}" style="padding:5px 9px;font-size:12px" onclick="saveFoodPick(${i})">${fav?'★':'⭐'}</button></div></div>`}).join('')}</div></div>`;
 }
 
 // v41.7 planificador semanal con Costco/Walmart/tiendas cercanas
@@ -3329,7 +3365,7 @@ function secHero(icon,title,sub,chips){
   return `<div class="sec-hero"><h2>${icon} ${safeText(title)}</h2>${sub?`<div class="sec-sub">${safeText(sub)}</div>`:''}${chips&&chips.length?`<div class="sec-hero-chips">${chips.map(c=>`<div><b>${c.v}</b><span>${safeText(c.l)}</span></div>`).join('')}</div>`:''}</div>`;
 }
 function secPerfil(){
-  let goals=['ganar músculo','mantener','bajar grasa'],cur=state.profile.objetivo||'ganar músculo';
+  let goals=['ganar peso','ganar músculo','mantener','bajar grasa'],cur=state.profile.objetivo||'ganar músculo';
   return secHero('👤','Perfil y metas','Tus datos base para calcular tus calorías y macros del día.')
   + `<div class="card">
     <h3 style="margin-top:0">Tus datos</h3>
@@ -7337,7 +7373,7 @@ function renderRecipes(){
     if(m!='todas'&&m!=='thermomix'){let mLow=r.method.toLowerCase();let tLow=r.type.toLowerCase();let direct=['comida','snack','fruta','agua','hotcake','avena','pan','aderezo'].includes(m)&&tLow===m;let match=direct||(m==='carne'&&r.tags.toLowerCase().includes('carne cocida'))||mLow.includes(m.replace('licuadora','licuad'))||(m=='cafe'&&tLow=='cafe')||(m=='salsa'&&tLow=='salsa')||(m=='licuadora'&&(tLow=='licuado'||mLow.includes('licuad')));if(!match)return false;}
     let searchable=(r.name+' '+r.tags+' '+r.method+' '+r.ingredients+' '+r.steps.join(' ')).toLowerCase();
     if(s&&!searchable.includes(s)) return false;
-    if(pf==='favoritas'&&!state.recipeFavorites.includes(baseRecipes.indexOf(r)))return false;
+    if(pf==='favoritas'&&!isRecipeFav(baseRecipes.indexOf(r)))return false;
     if(pf!=='todas'&&pf!=='favoritas'&&!r.tags.toLowerCase().includes(pf))return false;
     return true;
   });
@@ -7437,7 +7473,7 @@ function renderRecipes(){
           </div>
           <div class="row" style="margin-top:10px;gap:6px">
             <button class="btn primary" onclick="logRecipeAsMeal(${baseRecipes.indexOf(r)})">✅ Comí esto</button>
-            <button class="btn" onclick="toggleFavoriteRecipe(${baseRecipes.indexOf(r)})">${state.recipeFavorites.includes(baseRecipes.indexOf(r))?'★ Favorita':'☆ Favorita'}</button>
+            <button class="btn" onclick="toggleFavoriteRecipe(${baseRecipes.indexOf(r)})">${isRecipeFav(baseRecipes.indexOf(r))?'★ Favorita':'☆ Favorita'}</button>
             <button class="btn" onclick="openAppTimer('${r.name.replace(/'/g,"\\'")}',${r.time*60})">▶ Preparar ahora</button>
             <button class="btn" onclick="toggleRecipeTools(${baseRecipes.indexOf(r)})">••• Más</button>
           </div>
@@ -7505,8 +7541,11 @@ function toggleRecipeTools(key){
   let el=document.getElementById('recipeTools_'+key);if(el)el.classList.toggle('open');
 }
 function toggleFavoriteRecipe(key){
-  let i=state.recipeFavorites.indexOf(key);
-  if(i>=0)state.recipeFavorites.splice(i,1);else state.recipeFavorites.push(key);
+  let id=(typeof key==='string')?key:recipeIdOf(key);
+  if(id==null)return;
+  if(!Array.isArray(state.recipeFavorites))state.recipeFavorites=[];
+  let i=state.recipeFavorites.indexOf(id);
+  if(i>=0)state.recipeFavorites.splice(i,1);else state.recipeFavorites.push(id);
   save();renderRecipes();
 }
 function rateRecipe(key,value){if(value){state.recipeRatings[key]=+value;save()}}
@@ -7829,7 +7868,7 @@ function renderFridgeRealMatches(){
   let scored=baseRecipes.map((r,i)=>({r,i,score:scoreRecipeByPicked(r)})).filter(x=>x.score>=2).sort((a,b)=>b.score-a.score||b.r.k-a.r.k);
   if(!scored.length){out.innerHTML='<p class="muted" style="margin-top:12px">Aún no hay recetas reales que junten al menos 2 de tus ingredientes marcados. Marca 1-2 más para ver coincidencias.</p>';return}
   let shown=Math.min(fridgeMatchShown,scored.length),top=scored.slice(0,shown);
-  out.innerHTML=`<div style="margin-top:14px"><b>🍽️ Recetas reales con lo que tienes (${scored.length} encontradas)</b><div class="grid" style="margin-top:8px">${top.map(x=>{let r=x.r,fav=state.recipeFavorites.includes(x.i);return `<div class="mini">${typeBadge(r.type)}<b>${safeText(r.name)}</b><br>${r.k} kcal · P ${r.p}g · ${money(r.cost||0)}${whenLine(r)}<span class="muted" style="font-size:11px">Usa ${x.score} de tus ingredientes</span><br><div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn primary" style="padding:5px 9px;font-size:12px" onclick="logRecipeAsMeal(${x.i})">✅ Comí</button><button class="btn ${fav?'primary':''}" style="padding:5px 9px;font-size:12px" onclick="saveFoodPick(${x.i})">${fav?'★':'⭐'}</button></div></div>`}).join('')}</div>${scored.length>shown?`<button class="btn" style="margin-top:8px" onclick="fridgeMatchShown+=6;renderFridgeRealMatches()">Ver más (${scored.length-shown} más)</button>`:''}</div>`;
+  out.innerHTML=`<div style="margin-top:14px"><b>🍽️ Recetas reales con lo que tienes (${scored.length} encontradas)</b><div class="grid" style="margin-top:8px">${top.map(x=>{let r=x.r,fav=isRecipeFav(x.i);return `<div class="mini">${typeBadge(r.type)}<b>${safeText(r.name)}</b><br>${r.k} kcal · P ${r.p}g · ${money(r.cost||0)}${whenLine(r)}<span class="muted" style="font-size:11px">Usa ${x.score} de tus ingredientes</span><br><div class="row" style="gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn primary" style="padding:5px 9px;font-size:12px" onclick="logRecipeAsMeal(${x.i})">✅ Comí</button><button class="btn ${fav?'primary':''}" style="padding:5px 9px;font-size:12px" onclick="saveFoodPick(${x.i})">${fav?'★':'⭐'}</button></div></div>`}).join('')}</div>${scored.length>shown?`<button class="btn" style="margin-top:8px" onclick="fridgeMatchShown+=6;renderFridgeRealMatches()">Ver más (${scored.length-shown} más)</button>`:''}</div>`;
 }
 function makeFridgeRecipe(mode='normal'){
   let out=document.getElementById('fridgeOut');if(!out)return;
@@ -9651,7 +9690,7 @@ function importData(){
       let summary=`Peso: ${(incoming.weight||[]).length}\\nGastos: ${(incoming.expenses||[]).length}\\nComidas registradas: ${(incoming.meals||[]).length}\\nFotos de progreso: ${(incoming.progressPhotos||[]).length}\\n\\nReemplazar los datos actuales?`;
       if(!confirm(summary))return;
       await saveVersionSnapshot(JSON.stringify(state),'antes-importar-'+new Date().toISOString());
-      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'43.0.0';save();render();alert('Respaldo importado correctamente.');
+      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'44.0.0';save();render();alert('Respaldo importado correctamente.');
     }catch(error){alert('No se pudo importar: '+error.message)}
   };
   reader.readAsText(file);
@@ -10231,7 +10270,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='43.0.0';
+    window.HM_APP_VERSION='44.0.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
@@ -10379,8 +10418,8 @@ tryLoadIDB();
     document.head.appendChild(style);
 
     function v4124Refresh(){
-      try{var chip=document.querySelector('.versionChip'); if(chip) chip.textContent='v41.26'; document.title='Mi Proyecto Personal · Maui · v41.26 Inicio sin botón repetido';}catch(e){}
-      try{if(typeof render==='function') render();}catch(e){console.warn('render v41.26',e)}
+      try{var _vmaj='v'+String(window.HM_APP_VERSION||'44.0.0').split('.')[0];var chip=document.querySelector('.versionChip'); if(chip) chip.textContent=_vmaj; document.title='Mi Proyecto Personal · Maui · '+_vmaj;}catch(e){}
+      try{if(typeof render==='function') render();}catch(e){console.warn('render version patch',e)}
       try{setTimeout(function(){if(typeof calcMacros==='function' && document.getElementById('macroOut')) calcMacros(); if(typeof renderVisibleSections==='function') renderVisibleSections();},80)}catch(e){}
     }
     if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',v4124Refresh); else setTimeout(v4124Refresh,50);
