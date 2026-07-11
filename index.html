@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='44.4.0';
+  window.HM_APP_VERSION='45.0.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -573,9 +573,13 @@ function tryLoadIDB(){
   let previous=Number(state.schemaVersion||0);
 if(_storedStateRaw&&previous<APP_SCHEMA_VERSION)saveVersionSnapshot(_storedStateRaw,'antes-v24-'+new Date().toISOString());
   state.schemaVersion=APP_SCHEMA_VERSION;
-state.appVersion=window.HM_APP_VERSION||'44.4.0';
+state.appVersion=window.HM_APP_VERSION||'45.0.0';
   // v43: dar id/client_id/updated_at estables a los pesos existentes SIN borrar nada.
   try{if(typeof normalizeAllWeights==='function')normalizeAllWeights();}catch(e){}
+  // v45: usuarios con datos previos ya cuentan como registrados (no se les muestra el registro inicial).
+  if(typeof state.onboarded==='undefined'){
+    state.onboarded = !!((state.weight&&state.weight.length>0)||(state.meals&&state.meals.length>0)||(state.profile&&state.profile.nombre));
+  }
   safeStorage.set('pp_full',JSON.stringify(state));
   persistStateIDB(JSON.stringify(state));
 })();
@@ -6947,6 +6951,8 @@ function mergeCloudStates(local,remote){
   for(let k of keys){
     if(Array.isArray(local[k])||Array.isArray(remote[k])) base[k]=_mergeArrays(local[k],remote[k]);
   }
+  // El registro inicial es "pegajoso": si se completó en cualquier dispositivo, no se vuelve a pedir.
+  base.onboarded=!!(local.onboarded||remote.onboarded);
   base.lastModified=new Date().toISOString();
   return base;
 }
@@ -7036,6 +7042,7 @@ async function cloudStartupSync(){
     safeStorage.set('pp_full',JSON.stringify(state));persistStateIDB(JSON.stringify(state));
     _startupSynced=true;
     render();
+    maybeShowOnboarding();
     await cloudSave(true); // sube la UNIÓN (nunca más pobre que la nube): frena la pérdida de datos.
     setSync('synced');
   }catch(e){console.error('[SYNC] Error en sincronización inicial:',e);setSync('error',(e&&e.message)||'Error desconocido');}
@@ -7241,7 +7248,7 @@ function ownMauiPantry(i){
   let out=document.getElementById('fridgeOut');if(out)out.innerHTML='<div class="ok"><b>Agregado a tu nevera:</b> '+safeText(x.name)+'. Ahora puedes tocar Crear comida o Lista de compra.</div>';
 }
 
-function bindAll(){try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);}
+function bindAll(){try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(!getCloudSession())maybeShowOnboarding();},600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);}
 function convertWorkoutWeight(source){
   let lb=document.getElementById('workoutLb'),kg=document.getElementById('workoutKg'),out=document.getElementById('workoutWeightOut');
   if(!lb||!kg||!out)return;
@@ -7819,6 +7826,49 @@ function selectRecipeMethod(idx,key){
     if(altBlock)altBlock.innerHTML='<div style="font-weight:900;font-size:13px;margin:6px 0">'+sel.icon+' Preparación en '+safeText(sel.label)+(sel.temp?' · '+safeText(sel.temp):'')+'</div>'+
       sel.steps.map((x,i)=>'<label class="step" style="cursor:pointer"><input type="checkbox" style="margin-right:8px" onclick="this.closest(\'.step\').classList.toggle(\'done\',this.checked)"><span class="step-text"><span class="step-num">Paso '+(i+1)+':</span> '+safeText(x)+'</span></label>').join('');
   }
+}
+// ===== v45 Fase D: registro inicial (onboarding) + perfil ampliado =====
+function maybeShowOnboarding(){ if(!state.onboarded){ try{showOnboarding()}catch(e){console.warn('onboarding',e)} } }
+function showOnboarding(){
+  if(state.onboarded)return;
+  if(document.getElementById('onboardingModal'))return;
+  var p=state.profile||(state.profile={});
+  var box=document.createElement('div'); box.id='onboardingModal';
+  box.style.cssText='position:fixed;inset:0;background:#000b;z-index:23000;display:grid;place-items:center;padding:16px;overflow:auto';
+  box.innerHTML='<div class="card" style="width:min(560px,100%);max-height:92vh;overflow:auto">'
+    +'<h2 style="margin-top:0">👋 Bienvenido — configura tu cuenta</h2>'
+    +'<p class="muted">Con estos datos la app personaliza tus calorías, recetas y menú. Podrás cambiarlos después en Perfil.</p>'
+    +'<div class="grid">'
+    +'<div><label>Nombre</label><input id="obNombre" value="'+safeText(p.nombre||'')+'"></div>'
+    +'<div><label>Edad</label><input id="obEdad" type="number" inputmode="numeric" value="'+(p.edad||'')+'"></div>'
+    +'<div><label>Peso (lb)</label><input id="obPeso" type="number" inputmode="decimal" value="'+(p.peso||'')+'"></div>'
+    +'<div><label>Estatura (cm)</label><input id="obAltura" type="number" inputmode="numeric" value="'+(p.altura||'')+'"></div>'
+    +'<div><label>Objetivo</label><select id="obObjetivo">'+['ganar peso','ganar músculo','mantener','bajar grasa'].map(function(o){return '<option'+(p.objetivo===o?' selected':'')+'>'+o+'</option>';}).join('')+'</select></div>'
+    +'<div><label>Nivel de actividad</label><select id="obActividad">'+['baja','media','alta','muy alta'].map(function(o){return '<option'+((p.actividad||'muy alta')===o?' selected':'')+'>'+o+'</option>';}).join('')+'</select></div>'
+    +'<div><label>Pasos por día aprox.</label><input id="obPasos" type="number" step="500" inputmode="numeric" value="'+(p.pasosDia||18000)+'"></div>'
+    +'</div>'
+    +'<div style="margin-top:8px"><label>Preferencias de comida (opcional)</label><input id="obPref" placeholder="Ej: sin cerdo, más pollo, poco picante" value="'+safeText(p.preferencias||'')+'"></div>'
+    +'<div style="margin-top:10px"><label>Herramientas de cocina que tienes</label><div class="row" id="obTools" style="gap:6px;flex-wrap:wrap;margin-top:4px">'+KITCHEN_TOOLS_ORDER.map(function(key){var m=KITCHEN_METHODS[key];var on=!!(state.kitchenTools&&state.kitchenTools[key]);return '<button class="btn'+(on?' primary':'')+'" data-tool="'+key+'" onclick="toggleKitchenTool(\''+key+'\')">'+m.icon+' '+m.label+(on?' ✓':'')+'</button>';}).join('')+'</div></div>'
+    +'<button class="btn primary" style="width:100%;margin-top:14px;min-height:52px;font-size:16px" onclick="finishOnboarding()">Guardar y empezar</button>'
+    +'</div>';
+  document.body.appendChild(box);
+}
+function finishOnboarding(){
+  var g=function(id){var e=document.getElementById(id);return e?String(e.value):'';};
+  state.profile=state.profile||{};
+  var nom=g('obNombre').trim(); if(nom)state.profile.nombre=nom;
+  state.profile.edad=+g('obEdad')||state.profile.edad||30;
+  state.profile.peso=+g('obPeso')||state.profile.peso||150;
+  state.profile.altura=+g('obAltura')||state.profile.altura||170;
+  state.profile.objetivo=g('obObjetivo')||state.profile.objetivo||'ganar músculo';
+  state.profile.actividad=g('obActividad')||state.profile.actividad||'muy alta';
+  state.profile.pasosDia=+g('obPasos')||state.profile.pasosDia||18000;
+  state.profile.preferencias=g('obPref').trim();
+  state.onboarded=true;
+  state.kitchenConfigured=true;
+  save();
+  var b=document.getElementById('onboardingModal'); if(b)b.remove();
+  try{render()}catch(e){}
 }
 // Filtros rápidos por objetivo (usan los controles existentes de tipo/presupuesto/orden).
 function recipeQuickFilter(kind){
@@ -9984,7 +10034,7 @@ function importData(){
       let summary=`Peso: ${(incoming.weight||[]).length}\\nGastos: ${(incoming.expenses||[]).length}\\nComidas registradas: ${(incoming.meals||[]).length}\\nFotos de progreso: ${(incoming.progressPhotos||[]).length}\\n\\nReemplazar los datos actuales?`;
       if(!confirm(summary))return;
       await saveVersionSnapshot(JSON.stringify(state),'antes-importar-'+new Date().toISOString());
-      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'44.4.0';save();render();alert('Respaldo importado correctamente.');
+      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'45.0.0';save();render();alert('Respaldo importado correctamente.');
     }catch(error){alert('No se pudo importar: '+error.message)}
   };
   reader.readAsText(file);
@@ -10564,7 +10614,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='44.4.0';
+    window.HM_APP_VERSION='45.0.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
@@ -10654,6 +10704,7 @@ tryLoadIDB();
         <h3 style="margin-top:0">Datos que sí cambian tu comida</h3>
         <p class="muted">Aquí la app calcula cuánto comer tomando en cuenta tu peso, altura, objetivo y los pasos que caminas en jardinería.</p>
         <div class="profile-clean-grid">
+          <div><label>Nombre</label><input id="nombrePerfil" value="${safeText(p.nombre||'')}" onchange="state.profile.nombre=this.value;save()"></div>
           <div><label>Peso actual (lb)</label><input id="peso" type="number" step=".1" value="${p.peso||150}" inputmode="decimal"></div>
           <div><label>Altura (cm)</label><input id="altura" type="number" step="1" value="${p.altura||170}" inputmode="numeric"></div>
           <div><label>Edad</label><input id="edad" type="number" step="1" value="${p.edad||30}" inputmode="numeric"></div>
@@ -10667,7 +10718,9 @@ tryLoadIDB();
           <button class="btn primary" onclick="setProfileSteps(22000)">Jardinería fuerte<br><small>22k pasos</small></button>
           <button class="btn" onclick="setProfileSteps(28000)">Día pesado<br><small>28k pasos</small></button>
         </div>
-        <button class="btn primary big-profile-btn" onclick="calcMacros();document.getElementById('macroOut')&&document.getElementById('macroOut').scrollIntoView({behavior:'smooth',block:'start'})">Calcular cuánto debo comer</button>
+        <div style="margin-top:8px"><label>Preferencias de comida (opcional)</label><input id="preferenciasPerfil" placeholder="Ej: sin cerdo, más pollo, poco picante" value="${safeText(p.preferencias||'')}" onchange="state.profile.preferencias=this.value;save()"></div>
+        <div class="row" style="gap:6px;margin-top:8px"><button class="btn" onclick="openTab('🍽️ Recetas')">🍳 Configurar Mi cocina</button><button class="btn" onclick="state.onboarded=false;save();showOnboarding()">📝 Repetir registro inicial</button></div>
+        <button class="btn primary big-profile-btn" style="margin-top:8px" onclick="calcMacros();document.getElementById('macroOut')&&document.getElementById('macroOut').scrollIntoView({behavior:'smooth',block:'start'})">Calcular cuánto debo comer</button>
         <div id="macroOut" class="card macro-out-clean"></div>
       </div>
       <details class="settings-clean-details"><summary>⚙️ Más datos opcionales</summary><div class="card"><p class="muted">No necesitas llenar esto diario. Úsalo solo si quieres más historial.</p><div class="grid"><button class="btn" onclick="openTab('⚖️ Peso')">Historial de peso</button><button class="btn" onclick="openTab('🚶 Caminata')">Registrar caminata</button><button class="btn" onclick="openTab('🍱 Contador')">Contador de comida</button><button class="btn" onclick="openTab('💪 Ejercicio')">Fitness</button></div></div></details>`;
