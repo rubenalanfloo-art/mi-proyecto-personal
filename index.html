@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='44.3.0';
+  window.HM_APP_VERSION='44.4.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -573,7 +573,7 @@ function tryLoadIDB(){
   let previous=Number(state.schemaVersion||0);
 if(_storedStateRaw&&previous<APP_SCHEMA_VERSION)saveVersionSnapshot(_storedStateRaw,'antes-v24-'+new Date().toISOString());
   state.schemaVersion=APP_SCHEMA_VERSION;
-state.appVersion=window.HM_APP_VERSION||'44.3.0';
+state.appVersion=window.HM_APP_VERSION||'44.4.0';
   // v43: dar id/client_id/updated_at estables a los pesos existentes SIN borrar nada.
   try{if(typeof normalizeAllWeights==='function')normalizeAllWeights();}catch(e){}
   safeStorage.set('pp_full',JSON.stringify(state));
@@ -2263,6 +2263,71 @@ function addFull(o){
    tags:'snack proteina rapido sin cocinar ganar musculo desayuno',ingredients:'1 taza yogur griego natural, ½ taza granola, ½ taza fruta, 1 cda miel',
    steps:['Sirve el yogur en un tazón o frasco.','Agrega la granola y la fruta picada.','Termina con miel.','Si es para llevar, pon la granola aparte y mézclala al momento.'],
    method:'sin cocinar',temp:'Frío',conservar:'Refrigerador; granola aparte para que no se ablande.',duracion:'2 días (yogur), granola seca aparte.',recalentar:'No aplica.',llevarTrabajo:'Sí, en frasco; ideal media mañana.'}
+].forEach(addFull);
+
+// ---- Fase C · lote 2: más recetas completas ----
+[
+  {name:'Flan napolitano casero',type:'postre',time:60,k:280,p:7,carbs:40,grasas:10,cost:1.6,porciones:'6',dificultad:'Media',
+   tags:'postre flan dulce clasico ganar peso',ingredients:'4 huevos, 1 lata leche condensada, 1 lata leche evaporada, 80 g queso crema, azúcar para caramelo, vainilla',
+   steps:['Derrite ½ taza de azúcar hasta caramelo y cubre el molde.','Licúa huevos, ambas leches, queso crema y vainilla.','Vierte sobre el caramelo y tapa con papel aluminio.','Cocina a baño María en horno a 180°C por 45-50 min.','Enfría 4 h en refri y desmolda.'],
+   method:'horno',temp:'Horno: 180°C baño María 45-50 min',conservar:'Refrigerador tapado.',duracion:'4 días.',recalentar:'Se come frío, no se recalienta.',llevarTrabajo:'Sí, en frasco frío.',
+   methods:[{method:'instantpot',temp:'Instant Pot: presión alta 18 min',steps:['Prepara el caramelo y la mezcla licuada.','Vierte en flanera tapada con aluminio.','Pon 1½ taza de agua y la rejilla; coloca la flanera.','Presión alta 18 min; libera natural 12 min.','Enfría 4 h antes de desmoldar.']}]},
+  {name:'Fresas con crema',type:'postre',time:8,k:250,p:4,carbs:35,grasas:11,cost:2.0,porciones:'2',dificultad:'Fácil',
+   tags:'postre rapido sin cocinar fresa fruta',ingredients:'2 tazas fresas, ½ taza crema, ¼ taza leche condensada, vainilla',
+   steps:['Lava y parte las fresas.','Mezcla crema, leche condensada y vainilla.','Combina con las fresas.','Refrigera 15 min y sirve frío.'],
+   method:'sin cocinar',temp:'Frío',conservar:'Refrigerador tapado.',duracion:'2 días.',recalentar:'No aplica.',llevarTrabajo:'Sí, en frasco con hielo.'},
+  {name:'Tinga de pollo',type:'pollococido',time:30,k:230,p:27,carbs:10,grasas:9,cost:2.4,porciones:'4',dificultad:'Fácil',
+   tags:'pollo deshebrado tinga proteina mexicana economica meal prep ganar musculo',ingredients:'2 pechugas cocidas y deshebradas, 3 jitomates, ¼ cebolla, 2 chipotles, 1 ajo, laurel',
+   steps:['Licúa jitomate, ajo, cebolla y chipotle.','Sofríe cebolla en rodajas 3 min.','Agrega el molido y el laurel; cocina 5 min.','Incorpora el pollo deshebrado y cocina 8 min.','Sirve en tostadas o tacos.'],
+   method:'estufa',temp:'Estufa: fuego medio',conservar:'Refrigerador tapado.',duracion:'4 días; 3 meses congelada.',recalentar:'Sartén 4 min o microondas 90 s.',llevarTrabajo:'Ideal: tostadas, tortas, ensaladas.',
+   methods:[{method:'instantpot',temp:'Instant Pot: presión alta 10 min',steps:['Pon pechugas, molido y laurel en la olla.','Presión alta 10 min; libera natural 5 min.','Deshebra dentro y reduce en Saltear 3 min.','Ajusta sal.']}]},
+  {name:'Picadillo de res con papa',type:'comida',time:30,k:340,p:24,carbs:22,grasas:17,cost:2.8,porciones:'4',dificultad:'Fácil',
+   tags:'comida mexicana economica res proteina meal prep ganar musculo',ingredients:'400 g carne molida, 1 papa, 1 zanahoria, 2 jitomates, ¼ cebolla, 1 ajo, chícharos',
+   steps:['Dora la carne molida con cebolla y ajo.','Agrega papa y zanahoria en cubos pequeños.','Licúa jitomate y viértelo; sazona.','Tapa y cocina 15 min hasta que la papa esté suave.','Sirve con arroz o en tacos.'],
+   method:'estufa',temp:'Estufa: fuego medio',conservar:'Refrigerador tapado.',duracion:'4 días; congela bien.',recalentar:'Sartén 4 min o microondas 2 min.',llevarTrabajo:'Sí, muy rendidor con arroz.'},
+  {name:'Frijoles charros',type:'sopa',time:35,k:280,p:16,carbs:34,grasas:9,cost:1.6,porciones:'4',dificultad:'Fácil',
+   tags:'frijoles charros sopa economica mexicana proteina',ingredients:'2 tazas frijoles cocidos, 100 g tocino, 2 salchichas, 2 jitomates, chile, cilantro',
+   steps:['Dora el tocino y la salchicha en trozos.','Agrega cebolla, jitomate y chile picados; sofríe 5 min.','Incorpora los frijoles con su caldo.','Hierve 15 min y agrega cilantro al final.'],
+   method:'estufa',temp:'Estufa: hervor suave',conservar:'Refrigerador tapado.',duracion:'4 días.',recalentar:'Estufa o microondas 2-3 min.',llevarTrabajo:'Sí, en termo caliente.',
+   methods:[{method:'instantpot',temp:'Instant Pot: presión 8 min',steps:['Dora tocino y salchicha en Saltear.','Agrega verduras y frijoles con caldo.','Presión alta 8 min; libera natural 5 min.','Cilantro al final.']}]},
+  {name:'Rajas con crema y elote',type:'comida',time:22,k:260,p:9,carbs:20,grasas:16,cost:1.9,porciones:'4',dificultad:'Fácil',
+   tags:'rajas crema comida mexicana vegetariana economica',ingredients:'4 chiles poblanos, 1 taza crema, ½ taza elote, ¼ cebolla, queso, mantequilla',
+   steps:['Asa, suda y pela los chiles; córtalos en rajas.','Acitrona la cebolla en mantequilla.','Agrega rajas y elote; cocina 5 min.','Incorpora la crema y el queso; calienta sin hervir.','Sirve con tortillas.'],
+   method:'estufa',temp:'Estufa: fuego bajo-medio',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Sartén o microondas 2 min.',llevarTrabajo:'Sí, con tortillas aparte.'},
+  {name:'Atún a la mexicana',type:'comida',time:12,k:220,p:26,carbs:8,grasas:9,cost:2.0,porciones:'2',dificultad:'Fácil',
+   tags:'atun proteina rapido economico sin cocinar meal prep ganar musculo',ingredients:'2 latas de atún, 2 jitomates, ¼ cebolla, chile serrano, cilantro, limón, aceite de oliva',
+   steps:['Pica jitomate, cebolla, chile y cilantro finamente.','Escurre el atún y mézclalo con las verduras.','Agrega limón, sal y un chorrito de aceite.','Sirve en tostadas o con galletas.'],
+   method:'sin cocinar',temp:'Frío',conservar:'Refrigerador tapado.',duracion:'2 días.',recalentar:'No aplica, se come frío.',llevarTrabajo:'Ideal: alto en proteína y portátil.'},
+  {name:'Huevos con machaca',type:'desayuno',time:12,k:300,p:24,carbs:6,grasas:20,cost:2.2,porciones:'2',dificultad:'Fácil',
+   tags:'desayuno proteina machaca huevo norteño ganar musculo',ingredients:'4 huevos, 60 g machaca (o carne seca), 1 jitomate, ¼ cebolla, chile, aceite',
+   steps:['Hidrata la machaca 5 min en agua caliente si está muy seca.','Sofríe cebolla, jitomate y chile.','Agrega la machaca y cocina 3 min.','Vierte los huevos batidos y revuelve hasta cuajar.','Sirve con tortillas de harina.'],
+   method:'estufa',temp:'Estufa: fuego medio',conservar:'Refrigerador tapado.',duracion:'2 días.',recalentar:'Sartén 2 min (el microondas reseca el huevo).',llevarTrabajo:'Sí, en taco de harina.'},
+  {name:'Bistec encebollado',type:'comida',time:18,k:290,p:30,carbs:6,grasas:16,cost:3.2,porciones:'2',dificultad:'Fácil',
+   tags:'bistec res proteina comida mexicana ganar musculo',ingredients:'300 g bistec de res, 1 cebolla, 2 dientes ajo, salsa inglesa, aceite, sal y pimienta',
+   steps:['Corta el bistec en tiras y sazona.','Sella en aceite caliente 2 min a fuego alto.','Agrega cebolla en gajos y ajo; saltea 4 min.','Añade un chorrito de salsa inglesa y cocina 2 min.','Sirve con arroz o tortillas.'],
+   method:'estufa',temp:'Estufa: fuego alto-medio',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Sartén 2-3 min.',llevarTrabajo:'Sí, con arroz.'},
+  {name:'Crema de calabaza',type:'sopa',time:25,k:190,p:6,carbs:24,grasas:8,cost:1.4,porciones:'4',dificultad:'Fácil',
+   tags:'sopa crema calabaza verdura economica ligera',ingredients:'4 calabacitas, 1 papa, ¼ cebolla, 1 ajo, 2 tazas caldo, ½ taza leche, mantequilla',
+   steps:['Sofríe cebolla y ajo en mantequilla.','Agrega calabaza y papa en trozos; cocina 5 min.','Añade el caldo y hierve 12 min hasta suavizar.','Licúa con la leche y regresa a la olla.','Calienta, ajusta sal y sirve.'],
+   method:'estufa',temp:'Estufa: hervor suave',conservar:'Refrigerador tapado.',duracion:'3 días.',recalentar:'Estufa o microondas 2-3 min.',llevarTrabajo:'Sí, en termo.',
+   methods:[{method:'instantpot',temp:'Instant Pot: presión 5 min',steps:['Saltear cebolla y ajo.','Agrega verduras y caldo.','Presión alta 5 min; libera rápido.','Licúa con leche y ajusta sal.']}]},
+  {name:'Lentejas guisadas',type:'sopa',time:35,k:250,p:16,carbs:38,grasas:4,cost:1.2,porciones:'4',dificultad:'Fácil',
+   tags:'lentejas sopa proteina vegetal economica ganar musculo',ingredients:'1 taza lentejas, 1 zanahoria, 1 papa, 2 jitomates, ¼ cebolla, 1 ajo, plátano macho opcional',
+   steps:['Enjuaga las lentejas y hiérvelas en 4 tazas de agua 20 min.','Licúa jitomate, cebolla y ajo; sofríe el molido.','Agrega el sofrito y las verduras a las lentejas.','Cocina 12 min más hasta que todo esté suave.','Ajusta sal; agrega plátano macho si te gusta dulce.'],
+   method:'estufa',temp:'Estufa: hervor suave',conservar:'Refrigerador tapado.',duracion:'4 días.',recalentar:'Estufa o microondas 2-3 min con un poco de agua.',llevarTrabajo:'Sí, en termo.',
+   methods:[{method:'instantpot',temp:'Instant Pot: presión alta 15 min',steps:['Pon lentejas, sofrito, verduras y 3 tazas de agua.','Presión alta 15 min; libera natural 10 min.','Ajusta sal y consistencia.']}]},
+  {name:'Ensalada de coditos con atún',type:'pasta',time:20,k:360,p:18,carbs:42,grasas:14,cost:2.2,porciones:'4',dificultad:'Fácil',
+   tags:'pasta fria coditos atun proteina llevar trabajo economica',ingredients:'250 g coditos, 2 latas de atún, ½ taza mayonesa, elote, zanahoria, chícharos, ¼ cebolla',
+   steps:['Cuece los coditos al dente y enfría con agua.','Mezcla atún, mayonesa, elote, zanahoria rallada y chícharos.','Integra la pasta fría y la cebolla picada.','Refrigera 20 min y sirve fría.'],
+   method:'sin cocinar',temp:'Fría (después de cocer la pasta)',conservar:'Refrigerador tapado.',duracion:'2-3 días.',recalentar:'No aplica, se come fría.',llevarTrabajo:'Ideal para llevar; aguanta bien.'},
+  {name:'Agua de horchata',type:'agua',time:15,k:150,p:2,carbs:30,grasas:3,cost:0.8,porciones:'4',dificultad:'Fácil',
+   tags:'agua fresca horchata arroz canela economica',ingredients:'1 taza arroz, 1 raja canela, 1 L agua, ½ taza leche, azúcar, vainilla',
+   steps:['Remoja arroz y canela en 2 tazas de agua 2 h (o 20 min en agua caliente).','Licúa muy bien y cuela.','Mezcla con el resto del agua, la leche, azúcar y vainilla.','Sirve muy frío con hielo.'],
+   method:'licuadora',temp:'Fría',conservar:'Refrigerador en jarra tapada.',duracion:'3 días (agita antes de servir).',recalentar:'No aplica.',llevarTrabajo:'Sí, en botella con hielo.'},
+  {name:'Licuado de fresa proteico',type:'licuado',time:5,k:340,p:26,carbs:38,grasas:8,cost:2.2,porciones:'1',dificultad:'Fácil',
+   tags:'licuado proteina fresa ganar musculo rapido desayuno',ingredients:'1 taza leche, ½ taza yogur griego, 1 taza fresas, 1 scoop proteína o 2 cdas avena, miel, hielo',
+   steps:['Pon todos los ingredientes en la licuadora.','Licúa 40 seg hasta homogéneo.','Sirve inmediato.'],
+   method:'licuadora',temp:'Frío',conservar:'Mejor recién hecho.',duracion:'12 h en refri (agita).',recalentar:'No aplica.',llevarTrabajo:'Sí, en botella con hielo.'}
 ].forEach(addFull);
 
 // ===== v44 Fase A: id estable de recetas + campos opcionales + migración de favoritos =====
@@ -9919,7 +9984,7 @@ function importData(){
       let summary=`Peso: ${(incoming.weight||[]).length}\\nGastos: ${(incoming.expenses||[]).length}\\nComidas registradas: ${(incoming.meals||[]).length}\\nFotos de progreso: ${(incoming.progressPhotos||[]).length}\\n\\nReemplazar los datos actuales?`;
       if(!confirm(summary))return;
       await saveVersionSnapshot(JSON.stringify(state),'antes-importar-'+new Date().toISOString());
-      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'44.3.0';save();render();alert('Respaldo importado correctamente.');
+      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'44.4.0';save();render();alert('Respaldo importado correctamente.');
     }catch(error){alert('No se pudo importar: '+error.message)}
   };
   reader.readAsText(file);
@@ -10499,7 +10564,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='44.3.0';
+    window.HM_APP_VERSION='44.4.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
