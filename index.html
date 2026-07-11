@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='45.2.2';
+  window.HM_APP_VERSION='45.2.3';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -573,7 +573,7 @@ function tryLoadIDB(){
   let previous=Number(state.schemaVersion||0);
 if(_storedStateRaw&&previous<APP_SCHEMA_VERSION)saveVersionSnapshot(_storedStateRaw,'antes-v24-'+new Date().toISOString());
   state.schemaVersion=APP_SCHEMA_VERSION;
-state.appVersion=window.HM_APP_VERSION||'45.2.2';
+state.appVersion=window.HM_APP_VERSION||'45.2.3';
   // v43: dar id/client_id/updated_at estables a los pesos existentes SIN borrar nada.
   try{if(typeof normalizeAllWeights==='function')normalizeAllWeights();}catch(e){}
   // v45: usuarios con datos previos ya cuentan como registrados (no se les muestra el registro inicial).
@@ -7178,10 +7178,55 @@ async function recoverPassword(){
   setSt('Enviando correo de recuperación…',true);
   try{
     var c=getCloudConfig();
-    var r=await fetch(c.url+'/auth/v1/recover',{method:'POST',headers:{apikey:c.key,'Content-Type':'application/json'},body:JSON.stringify({email:email})});
+    var redirect=encodeURIComponent(location.origin+location.pathname);
+    var r=await fetch(c.url+'/auth/v1/recover?redirect_to='+redirect,{method:'POST',headers:{apikey:c.key,'Content-Type':'application/json'},body:JSON.stringify({email:email})});
     if(!r.ok){var d=await r.json().catch(function(){return {};});throw Error(traducirAuthError(d,r.status));}
-    setSt('✅ Te enviamos un correo para restablecer tu contraseña. Revisa tu bandeja y spam.',true);
+    setSt('✅ Te enviamos un correo para restablecer tu contraseña. Ábrelo desde este mismo dispositivo. Revisa tu bandeja y spam.',true);
   }catch(e){setSt((e&&e.message)||'No se pudo enviar el correo de recuperación.',false);}
+}
+// Detecta el enlace de recuperación (Supabase redirige con #access_token=...&type=recovery) y permite fijar nueva contraseña.
+function ppHandleRecovery(){
+  try{
+    var h=location.hash||'';
+    if(h.indexOf('type=recovery')<0 || h.indexOf('access_token=')<0) return false;
+    var p=new URLSearchParams(h.replace(/^#/,''));
+    var at=p.get('access_token'), rt=p.get('refresh_token');
+    if(!at) return false;
+    safeStorage.set('pp_cloud_session', JSON.stringify({access_token:at, refresh_token:rt||'', token_type:'bearer', user:{}}));
+    try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
+    var l=document.getElementById('loginScreen'); if(l)l.remove();
+    showResetPasswordScreen();
+    return true;
+  }catch(e){return false;}
+}
+function showResetPasswordScreen(){
+  if(document.getElementById('resetPwScreen'))return;
+  var box=document.createElement('div');box.id='resetPwScreen';
+  box.style.cssText='position:fixed;inset:0;background:linear-gradient(160deg,#15704f,#0c3f2c);z-index:24500;display:grid;place-items:center;padding:18px;overflow:auto';
+  box.innerHTML='<div class="card" style="width:min(460px,100%);text-align:center"><div style="font-size:40px">🔑</div><h2 style="margin:6px 0">Nueva contraseña</h2><p class="muted">Escribe tu nueva contraseña.</p>'
+    +'<div style="text-align:left"><label>Nueva contraseña</label><input id="newPw1" type="password" style="width:100%" placeholder="mínimo 6 caracteres"></div>'
+    +'<div style="text-align:left;margin-top:8px"><label>Repite la contraseña</label><input id="newPw2" type="password" style="width:100%"></div>'
+    +'<div id="resetPwStatus" style="margin-top:8px"></div>'
+    +'<button class="btn primary" style="width:100%;min-height:50px;font-size:16px;margin-top:12px" onclick="submitNewPassword()">Guardar contraseña</button></div>';
+  document.body.appendChild(box);
+}
+async function submitNewPassword(){
+  var st=document.getElementById('resetPwStatus');
+  var p1=(document.getElementById('newPw1')||{}).value||'', p2=(document.getElementById('newPw2')||{}).value||'';
+  var setSt=function(m,ok){if(st)st.innerHTML='<div class="'+(ok?'ok':'warn')+'" style="margin:0">'+safeText(m)+'</div>';};
+  if(p1.length<6){setSt('La contraseña debe tener al menos 6 caracteres.',false);return;}
+  if(p1!==p2){setSt('Las contraseñas no coinciden.',false);return;}
+  setSt('Guardando…',true);
+  try{
+    var c=getCloudConfig(), s=getCloudSession();
+    var r=await fetch(c.url+'/auth/v1/user',{method:'PUT',headers:{apikey:c.key,Authorization:'Bearer '+s.access_token,'Content-Type':'application/json'},body:JSON.stringify({password:p1})});
+    var d=await r.json().catch(function(){return {};});
+    if(!r.ok)throw Error(traducirAuthError(d,r.status));
+    if(d&&d.id){ s.user=d; safeStorage.set('pp_cloud_session',JSON.stringify(s)); }
+    setSt('✅ Contraseña actualizada. Ya puedes usar la app.',true);
+    var b=document.getElementById('resetPwScreen'); if(b)b.remove();
+    setTimeout(function(){cloudStartupSync();try{render()}catch(e){}},200);
+  }catch(e){setSt((e&&e.message)||'No se pudo actualizar la contraseña.',false);}
 }
 async function loginScreenSubmit(mode){
   var st=document.getElementById('loginStatus');
@@ -7322,7 +7367,7 @@ function ownMauiPantry(i){
   let out=document.getElementById('fridgeOut');if(out)out.innerHTML='<div class="ok"><b>Agregado a tu nevera:</b> '+safeText(x.name)+'. Ahora puedes tocar Crear comida o Lista de compra.</div>';
 }
 
-function bindAll(){try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);}
+function bindAll(){try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);}
 function convertWorkoutWeight(source){
   let lb=document.getElementById('workoutLb'),kg=document.getElementById('workoutKg'),out=document.getElementById('workoutWeightOut');
   if(!lb||!kg||!out)return;
@@ -10195,7 +10240,7 @@ function importData(){
       let summary=`Peso: ${(incoming.weight||[]).length}\\nGastos: ${(incoming.expenses||[]).length}\\nComidas registradas: ${(incoming.meals||[]).length}\\nFotos de progreso: ${(incoming.progressPhotos||[]).length}\\n\\nReemplazar los datos actuales?`;
       if(!confirm(summary))return;
       await saveVersionSnapshot(JSON.stringify(state),'antes-importar-'+new Date().toISOString());
-      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'45.2.2';save();render();alert('Respaldo importado correctamente.');
+      state=incoming;state.schemaVersion=APP_SCHEMA_VERSION;state.appVersion=window.HM_APP_VERSION||'45.2.3';save();render();alert('Respaldo importado correctamente.');
     }catch(error){alert('No se pudo importar: '+error.message)}
   };
   reader.readAsText(file);
@@ -10775,7 +10820,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='45.2.2';
+    window.HM_APP_VERSION='45.2.3';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

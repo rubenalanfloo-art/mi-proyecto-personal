@@ -1,8 +1,20 @@
 {
-  "latest": "45.2.2",
+  "latest": "45.2.3",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "45.2.3",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Al abrir el enlace del correo de recuperacion, la app pide una nueva contrasena y la guarda"
+      ],
+      "cambios": [
+        "El correo de recuperacion ahora regresa a la app"
+      ],
+      "errores": []
+    },
     {
       "version": "45.2.2",
       "date": "2026-07-11",
