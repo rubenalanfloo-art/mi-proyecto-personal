@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.5.0';
+  window.HM_APP_VERSION='46.5.1';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -425,7 +425,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       </div>
     </div>
     <div class="appStatusBox">
-      <span class="versionChip">v44</span>
+      <span class="versionChip">v46.5.1</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -11128,7 +11128,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.5.0';
+    window.HM_APP_VERSION='46.5.1';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
@@ -11283,7 +11283,7 @@ tryLoadIDB();
     document.head.appendChild(style);
 
     function v4124Refresh(){
-      try{var _vmaj='v'+String(window.HM_APP_VERSION||'44.0.0').split('.')[0];var chip=document.querySelector('.versionChip'); if(chip) chip.textContent=_vmaj; document.title='Mi Proyecto Personal · Maui · '+_vmaj;}catch(e){}
+      try{var _vmaj='v'+String(window.HM_APP_VERSION||'46.0.0');var chip=document.querySelector('.versionChip'); if(chip) chip.textContent=_vmaj; document.title='Mi Proyecto Personal · Maui · '+_vmaj;}catch(e){}
       try{if(typeof render==='function') render();}catch(e){console.warn('render version patch',e)}
       try{setTimeout(function(){if(typeof calcMacros==='function' && document.getElementById('macroOut')) calcMacros(); if(typeof renderVisibleSections==='function') renderVisibleSections();},80)}catch(e){}
     }
