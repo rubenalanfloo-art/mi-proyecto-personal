@@ -1,8 +1,20 @@
 {
-  "latest": "46.4.3",
+  "latest": "46.4.4",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.4.4",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Registrar entrenamiento: elige el tipo (Pecho, Espalda, Pierna...) y toca el ejercicio en vez de escribirlo"
+      ],
+      "cambios": [
+        "Puedes seguir escribiendo el ejercicio a mano si prefieres (boton Otro)"
+      ],
+      "errores": []
+    },
     {
       "version": "46.4.3",
       "date": "2026-07-11",

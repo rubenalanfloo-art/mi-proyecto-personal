@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.4.3';
+  window.HM_APP_VERSION='46.4.4';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -1722,6 +1722,20 @@ Object.assign(fridgeCats,{
 });
 const exercises={
 pecho:['Push ups','Press banca','Press mancuernas','Fondos asistidos'],espalda:['Remo mancuerna','Jalón al pecho','Remo en cable','Superman en casa'],hombros:['Press militar','Elevaciones laterales','Pike push up','Face pull'],brazos:['Curl bíceps','Tríceps cuerda','Curl martillo','Fondos en silla'],pierna:['Sentadilla goblet','Prensa ligera','Peso muerto rumano','Zancadas cortas'],abdomen:['Plancha','Dead bug','Crunch cable','Pallof press'],gluteos:['Hip thrust','Puente glúteo','Patada cable','Step up bajo']};
+const EX_GROUP_LABELS={pecho:'💪 Pecho',espalda:'🔙 Espalda',hombros:'🏋️ Hombros',brazos:'💪 Brazos',pierna:'🦵 Pierna',abdomen:'🧘 Abdomen',gluteos:'🍑 Glúteos'};
+// Selector tocable de ejercicio para el registro (evita escribir): elige grupo → toca el ejercicio → llena el campo.
+function pickExGroup(g){
+  window._exGroup=g;
+  document.querySelectorAll('.ex-group-btn').forEach(b=>{b.className='btn ex-group-btn'+(b.dataset.g===g?' primary':'')});
+  let list=document.getElementById('exList'); if(!list)return;
+  let items=exercises[g]||[];
+  list.innerHTML=items.map(n=>`<button type="button" class="btn ex-ex-btn" onclick="pickExercise(this,'${n.replace(/'/g,"\\'")}')">${safeText(n)}</button>`).join('')+`<button type="button" class="btn" onclick="document.getElementById('simpleWorkoutExercise').focus()">✏️ Otro…</button>`;
+}
+function pickExercise(btn,name){
+  let inp=document.getElementById('simpleWorkoutExercise'); if(inp)inp.value=name;
+  document.querySelectorAll('.ex-ex-btn').forEach(b=>b.classList.remove('primary'));
+  if(btn)btn.classList.add('primary');
+}
 function exImgLink(e){return 'https://www.bing.com/images/search?q='+encodeURIComponent(e+' ejercicio gym')}
 function exVidLink(e){return 'https://www.youtube.com/results?search_query='+encodeURIComponent(e+' técnica correcta gym')}
 function exLink(e){return exImgLink(e)}
@@ -3924,7 +3938,13 @@ function secEjercicio(){
     <div class="fit-clean-details-body">
       <div class="fit-clean-tip">Usa esto solo después de entrenar. No necesitas llenarlo para crear la rutina.</div>
       <div class="grid" style="margin-top:10px">
-        <div><label>Ejercicio</label><input id="simpleWorkoutExercise" placeholder="Ej. press, remo, curl, plancha"></div>
+        <div style="grid-column:1/-1">
+          <label>Tipo de entrenamiento</label>
+          <div class="row" style="gap:6px;flex-wrap:wrap">${Object.keys(exercises).map(g=>`<button type="button" class="btn ex-group-btn" data-g="${g}" onclick="pickExGroup('${g}')">${EX_GROUP_LABELS[g]||g}</button>`).join('')}</div>
+          <div id="exList" class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px"></div>
+          <label style="margin-top:10px">Ejercicio</label>
+          <input id="simpleWorkoutExercise" placeholder="Elige arriba, o escríbelo aquí">
+        </div>
         <div><label>Peso lb</label><input id="simpleWorkoutWeight" type="number" inputmode="decimal" placeholder="Ej. 45"></div>
         <div><label>Series</label><input id="simpleWorkoutSets" type="number" inputmode="numeric" placeholder="Ej. 3"></div>
         <div><label>Reps</label><input id="simpleWorkoutReps" placeholder="Ej. 10,10,8"></div>
@@ -11068,7 +11088,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.4.3';
+    window.HM_APP_VERSION='46.4.4';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
