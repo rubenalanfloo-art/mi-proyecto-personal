@@ -1,8 +1,18 @@
 {
-  "latest": "46.6.0",
+  "latest": "46.6.1",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.6.1",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "Perfil mas limpio: se quito el panel de arriba, los atajos de pasos y Mas datos opcionales"
+      ],
+      "errores": []
+    },
     {
       "version": "46.6.0",
       "date": "2026-07-11",

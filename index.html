@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.6.0';
+  window.HM_APP_VERSION='46.6.1';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -447,7 +447,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       </div>
     </div>
     <div class="appStatusBox">
-      <span class="versionChip">v46.6.0</span>
+      <span class="versionChip">v46.6.1</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -3462,7 +3462,7 @@ function runAreaAction(code,btn,label){
   }catch(e){alert('No se pudo abrir esa acción todavía. Usa el botón normal de la sección.')}
 }
 function areaModePanel(t){
-  if(t==='🏠 Inicio')return '';
+  if(t==='🏠 Inicio'||t==='👤 Perfil')return '';
   let b=getAreaBlueprint(t),mode=getAreaMode(t),idx=tabs.indexOf(t),chip=mode==='personal'?'<span class="mode-personal-chip">Uso personal</span>':'<span class="mode-pro-chip">Uso profesional</span>';
   let actions=(b.actions||[]).slice(0,6).map(a=>{
     let code=encodeURIComponent(a[1]);
@@ -11221,7 +11221,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.6.0';
+    window.HM_APP_VERSION='46.6.1';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
@@ -11320,20 +11320,14 @@ tryLoadIDB();
           <div><label>Qué quiero lograr</label><select id="objetivo"><option${v4124Selected(p.objetivo,'ganar peso')}>ganar peso</option><option${v4124Selected(p.objetivo,'ganar músculo')}>ganar músculo</option><option${v4124Selected(p.objetivo,'mantener')}>mantener</option><option${v4124Selected(p.objetivo,'bajar grasa')}>bajar grasa</option></select></div>
           <div><label>Pasos que caminaste (ponlos y guarda)</label><input id="pasosDia" type="number" step="500" value="${pasos}" inputmode="numeric" onchange="state.profile.pasosDia=+this.value||0;save()"></div>
         </div>
-        <div class="row" style="gap:8px;margin-top:8px;align-items:center"><button class="btn primary" onclick="saveCustomSteps()">💾 Guardar mis pasos</button><span class="muted" style="font-size:12px">o toca un atajo de abajo</span><span id="stepsSavedMsg"></span></div>
-        <div class="step-presets" style="margin-top:8px">
-          <button class="btn" onclick="setProfileSteps(12000)">Día suave<br><small>12k pasos</small></button>
-          <button class="btn" onclick="setProfileSteps(18000)">Trabajo normal<br><small>18k pasos</small></button>
-          <button class="btn primary" onclick="setProfileSteps(22000)">Jardinería fuerte<br><small>22k pasos</small></button>
-          <button class="btn" onclick="setProfileSteps(28000)">Día pesado<br><small>28k pasos</small></button>
-        </div>
+        <div class="row" style="gap:8px;margin-top:8px;align-items:center"><button class="btn primary" onclick="saveCustomSteps()">💾 Guardar mis pasos</button><span id="stepsSavedMsg"></span></div>
         <div style="margin-top:8px"><label>Preferencias de comida (opcional)</label><input id="preferenciasPerfil" placeholder="Ej: sin cerdo, más pollo, poco picante" value="${safeText(p.preferencias||'')}" onchange="state.profile.preferencias=this.value;save()"></div>
         <div class="row" style="gap:6px;margin-top:8px"><button class="btn" onclick="openTab('🍽️ Recetas')">🍳 Configurar Mi cocina</button><button class="btn" onclick="state.onboarded=false;save();showOnboarding()">📝 Repetir registro inicial</button></div>
         <button class="btn primary big-profile-btn" style="margin-top:8px" onclick="calcMacros();document.getElementById('macroOut')&&document.getElementById('macroOut').scrollIntoView({behavior:'smooth',block:'start'})">Calcular cuánto debo comer</button>
         <div id="macroOut" class="card macro-out-clean"></div>
       </div>
       ${perfilCuentaHTML()}
-      <details class="settings-clean-details"><summary>⚙️ Más datos opcionales</summary><div class="card"><p class="muted">No necesitas llenar esto diario. Úsalo solo si quieres más historial.</p><div class="grid"><button class="btn" onclick="openTab('⚖️ Peso')">Historial de peso</button><button class="btn" onclick="openTab('🚶 Caminata')">Registrar caminata</button><button class="btn" onclick="openTab('🍱 Contador')">Contador de comida</button><button class="btn" onclick="openTab('💪 Ejercicio')">Fitness</button></div></div></details>`;
+      `;
     };
 
     var v4124OldSecCentro = (typeof secCentro==='function') ? secCentro : null;
