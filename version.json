@@ -1,8 +1,22 @@
 {
-  "latest": "46.5.7",
+  "latest": "46.6.0",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.6.0",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Perfil: escribe los pasos que caminaste y guarda (ademas de los atajos)",
+        "Perfil: iniciar/cerrar sesion y cambiar contrasena desde ahi",
+        "Perfil: panel arriba para mostrar solo las secciones que quieres"
+      ],
+      "cambios": [
+        "Al entrar a Ajustes ahora aparece primero Perfil"
+      ],
+      "errores": []
+    },
     {
       "version": "46.5.7",
       "date": "2026-07-11",

@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.5.7';
+  window.HM_APP_VERSION='46.6.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -447,7 +447,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       </div>
     </div>
     <div class="appStatusBox">
-      <span class="versionChip">v46.5.7</span>
+      <span class="versionChip">v46.6.0</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -612,7 +612,7 @@ const GROUPS = [
   {id:'salud',   label:'🍽️ Salud',   tabs:['🍱 Contador','🍽️ Recetas','🥗 Nevera','🤖 Thermomix TM5']},
   {id:'fitness', label:'💪 Fitness',  tabs:['💪 Ejercicio','🚶 Caminata','⚖️ Peso']},
   {id:'dinero',  label:'💳 Dinero',   tabs:['💳 Gastos','💰 Presupuesto','🛒 Precios','🌺 Ahorro']},
-  {id:'ajustes', label:'⚙️ Ajustes', tabs:['🧭 Centro','👤 Perfil','📊 Base datos','🧤 Trabajo','🚗 Vehículos','🏡 Casa','👕 Ropa','🧴 Piel','❤️ Ligar']},
+  {id:'ajustes', label:'⚙️ Ajustes', tabs:['👤 Perfil','🧭 Centro','📊 Base datos','🧤 Trabajo','🚗 Vehículos','🏡 Casa','👕 Ropa','🧴 Piel','❤️ Ligar']},
 ];
 let _activeGroup = 'inicio';
 let _activeTab = 0;
@@ -7044,8 +7044,31 @@ function renderAjustesUnificados(){
   +'</div>';
 }
 function renderVisibleSections(){
-  let el=document.getElementById('visibleSectionsOut');if(!el)return;
-  el.innerHTML=tabs.filter(t=>!t.includes('Inicio')&&!t.includes('Centro')).map(t=>`<label class="check mini"><input type="checkbox" ${state.uiSettings.hiddenTabs.includes(t)?'':'checked'} onchange="setSectionVisible('${t.replace(/'/g,"\\'")}',this.checked)">${t}</label>`).join('');
+  let els=document.querySelectorAll('#visibleSectionsOut, .visible-sections-out');
+  if(!els.length)return;
+  let html=tabs.filter(t=>!t.includes('Inicio')&&!t.includes('Centro')).map(t=>`<label class="check mini"><input type="checkbox" ${state.uiSettings.hiddenTabs.includes(t)?'':'checked'} onchange="setSectionVisible('${t.replace(/'/g,"\\'")}',this.checked)">${t}</label>`).join('');
+  els.forEach(el=>el.innerHTML=html);
+}
+// Cuenta (en Perfil): iniciar/cerrar sesión y cambiar contraseña.
+function perfilCuentaHTML(){
+  var s=(typeof getCloudSession==='function')?getCloudSession():null;
+  var email=(s&&s.user&&s.user.email)||'';
+  var logged=!!(s&&s.access_token);
+  return `<div class="card"><h3 style="margin-top:0">🔐 Cuenta</h3>`+(logged
+    ? `<p class="muted" style="margin-top:0">Sesión iniciada${email?': <b>'+safeText(email)+'</b>':''}</p>
+       <div class="row" style="gap:8px"><button class="btn" onclick="showResetPasswordScreen()">🔑 Cambiar contraseña</button><button class="btn" onclick="if(confirm('¿Cerrar sesión? Tus datos quedan guardados en la nube.'))cloudSignOut()">🚪 Salir</button></div>`
+    : `<p class="muted" style="margin-top:0">No has iniciado sesión.</p>
+       <div class="row" style="gap:8px"><button class="btn primary" onclick="showLoginScreen()">🔑 Iniciar sesión</button></div>
+       <p class="muted" style="font-size:12px;margin:8px 0 0">¿Olvidaste tu contraseña? En esa pantalla toca "¿Olvidaste tu contraseña?" para recibir el correo y cambiarla.</p>`)
+    +`</div>`;
+}
+function saveCustomSteps(){
+  var el=document.getElementById('pasosDia');if(!el)return;
+  var n=+el.value||0;
+  if(!state.profile)state.profile={};
+  state.profile.pasosDia=n; save();
+  var m=document.getElementById('stepsSavedMsg');if(m)m.innerHTML='<span class="ok" style="padding:4px 8px;font-size:12px">✓ Guardado: '+n.toLocaleString()+' pasos</span>';
+  try{calcMacros();}catch(e){}
 }
 function setSectionVisible(tab,visible){let list=state.uiSettings.hiddenTabs,i=list.indexOf(tab);if(visible&&i>=0)list.splice(i,1);if(!visible&&i<0)list.push(tab);save();render()}
 function printPersonalReport(){window.print()}
@@ -11198,7 +11221,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.5.7';
+    window.HM_APP_VERSION='46.6.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
@@ -11284,6 +11307,7 @@ tryLoadIDB();
     window.secPerfil=function(){
       var p=state.profile||{}, pasos=+(p.pasosDia||0)||v4124AvgSteps()||22000;
       return `<h2>👤 Perfil y meta de comida</h2>
+      <details class="settings-clean-details" style="border:1.5px solid #9dd5b4;background:#f7fff9"><summary>⚙️ Mostrar solo lo que quiero (ocultar secciones)</summary><div class="card"><p class="muted" style="margin-top:0">Desmarca lo que no uses. No se borra, solo se esconde de la barra.</p><div class="visible-sections-out"></div></div></details>
       <div class="card profile-clean-card">
         <h3 style="margin-top:0">Datos que sí cambian tu comida</h3>
         <p class="muted">Aquí la app calcula cuánto comer tomando en cuenta tu peso, altura, objetivo y los pasos que caminas en jardinería.</p>
@@ -11294,9 +11318,10 @@ tryLoadIDB();
           <div><label>Edad</label><input id="edad" type="number" step="1" value="${p.edad||30}" inputmode="numeric"></div>
           <div><label>Sexo para cálculo</label><select id="sexo"><option value="hombre"${v4124Selected(p.sexo,'hombre')}>Hombre</option><option value="mujer"${v4124Selected(p.sexo,'mujer')}>Mujer</option></select></div>
           <div><label>Qué quiero lograr</label><select id="objetivo"><option${v4124Selected(p.objetivo,'ganar peso')}>ganar peso</option><option${v4124Selected(p.objetivo,'ganar músculo')}>ganar músculo</option><option${v4124Selected(p.objetivo,'mantener')}>mantener</option><option${v4124Selected(p.objetivo,'bajar grasa')}>bajar grasa</option></select></div>
-          <div><label>Pasos promedio por día</label><input id="pasosDia" type="number" step="500" value="${pasos}" inputmode="numeric"></div>
+          <div><label>Pasos que caminaste (ponlos y guarda)</label><input id="pasosDia" type="number" step="500" value="${pasos}" inputmode="numeric" onchange="state.profile.pasosDia=+this.value||0;save()"></div>
         </div>
-        <div class="step-presets">
+        <div class="row" style="gap:8px;margin-top:8px;align-items:center"><button class="btn primary" onclick="saveCustomSteps()">💾 Guardar mis pasos</button><span class="muted" style="font-size:12px">o toca un atajo de abajo</span><span id="stepsSavedMsg"></span></div>
+        <div class="step-presets" style="margin-top:8px">
           <button class="btn" onclick="setProfileSteps(12000)">Día suave<br><small>12k pasos</small></button>
           <button class="btn" onclick="setProfileSteps(18000)">Trabajo normal<br><small>18k pasos</small></button>
           <button class="btn primary" onclick="setProfileSteps(22000)">Jardinería fuerte<br><small>22k pasos</small></button>
@@ -11307,6 +11332,7 @@ tryLoadIDB();
         <button class="btn primary big-profile-btn" style="margin-top:8px" onclick="calcMacros();document.getElementById('macroOut')&&document.getElementById('macroOut').scrollIntoView({behavior:'smooth',block:'start'})">Calcular cuánto debo comer</button>
         <div id="macroOut" class="card macro-out-clean"></div>
       </div>
+      ${perfilCuentaHTML()}
       <details class="settings-clean-details"><summary>⚙️ Más datos opcionales</summary><div class="card"><p class="muted">No necesitas llenar esto diario. Úsalo solo si quieres más historial.</p><div class="grid"><button class="btn" onclick="openTab('⚖️ Peso')">Historial de peso</button><button class="btn" onclick="openTab('🚶 Caminata')">Registrar caminata</button><button class="btn" onclick="openTab('🍱 Contador')">Contador de comida</button><button class="btn" onclick="openTab('💪 Ejercicio')">Fitness</button></div></div></details>`;
     };
 
