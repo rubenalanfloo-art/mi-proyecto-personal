@@ -1,8 +1,20 @@
 {
-  "latest": "46.4.1",
+  "latest": "46.4.2",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.4.2",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "La app ya no se traba al cambiar de seccion (por ejemplo de Salud a Fitness)"
+      ],
+      "errores": [
+        "Las recetas se volvian a dibujar en segundo plano aunque no estuvieran a la vista y trababan el cambio de seccion"
+      ]
+    },
     {
       "version": "46.4.1",
       "date": "2026-07-11",

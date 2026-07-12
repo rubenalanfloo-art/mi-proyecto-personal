@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.4.1';
+  window.HM_APP_VERSION='46.4.2';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -7922,6 +7922,9 @@ function toggleRecipeStep(recIdx,stepIdx){
 }
 function renderRecipes(){
   let el=$('#recipes');if(!el)return;
+  // No re-renderizar la lista (pesada: cientos de recetas) cuando la sección Recetas no está visible.
+  // Evita que bindAll trabe la app al cambiar de sección (p. ej. Salud → Fitness).
+  let _secEl=el.closest('.tab'); if(_secEl && !_secEl.classList.contains('active') && el.children.length) return;
   let f=$('#recFilter')?.value||'todas';
   let s=($('#recSearch')?.value||'').toLowerCase();
   let b=$('#recBudget')?.value||'all';
@@ -11051,7 +11054,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.4.1';
+    window.HM_APP_VERSION='46.4.2';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
