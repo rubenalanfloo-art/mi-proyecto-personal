@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.3.0';
+  window.HM_APP_VERSION='46.4.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -477,7 +477,7 @@ const safeStorage={
 let state={};
 const _storedStateRaw=safeStorage.get('pp_full')||'';
 try{state=JSON.parse(_storedStateRaw||'{}')||{}}catch(e){state={}}
-state.profile=state.profile||{peso:150,altura:170,edad:30,sexo:'hombre',actividad:'muy alta',objetivo:'ganar músculo'};state.meals=state.meals||[];state.weight=state.weight||[];state.walks=state.walks||[];state.expenses=state.expenses||[];state.expenseTemplates=state.expenseTemplates||[];state.expenseSettings=state.expenseSettings||{monthlyIncome:0,foodLimit:700,gasLimit:450,funLimit:150,cashLimit:120};state.receiptTextHistory=state.receiptTextHistory||[];state.budget=state.budget||[];state.routines=state.routines||[];state.prices=state.prices||[];state.vehicles=state.vehicles||[];state.tasks=state.tasks||[];state.clothes=state.clothes||[];
+state.profile=state.profile||{peso:150,altura:170,edad:30,sexo:'hombre',actividad:'muy alta',objetivo:'ganar músculo'};state.meals=state.meals||[];state.weight=state.weight||[];state.walks=state.walks||[];state.expenses=state.expenses||[];state.expenseTemplates=state.expenseTemplates||[];state.expenseSettings=state.expenseSettings||{monthlyIncome:0,foodLimit:700,gasLimit:450,funLimit:150,cashLimit:120};state.receiptTextHistory=state.receiptTextHistory||[];state.budget=state.budget||[];state.routines=state.routines||[];state.prices=state.prices||[];state.myProducts=state.myProducts||[];state.vehicles=state.vehicles||[];state.tasks=state.tasks||[];state.clothes=state.clothes||[];
 state.dating=state.dating||{profile:{name:'Ruben',goal:'conocer',style:'natural',language:'es'},history:[],plans:[]};
 state.dating.profile=state.dating.profile||{name:'Ruben',goal:'conocer',style:'natural',language:'es'};
 state.dating.history=state.dating.history||[];
@@ -4251,6 +4251,74 @@ TOTAL 36.27"></textarea>
 </div>
 `}
 function secPresupuesto(){let cats=['Renta','Internet','Gasolina','Pago F150','Pago Jetta','Seguro carro','Comida','Teléfono','Luz/agua','Suscripciones','Deudas','Gastos hormiga','Ahorro'];return `${secHero('💰','Presupuesto mensual','Cuánto entra, cuánto sale, y cuánto te queda.')}<div class="grid card"><input id="income" type="number" placeholder="ingreso mensual"><input id="saveGoal" type="number" placeholder="meta de ahorro"><select id="bcat">${cats.map(x=>`<option>${x}</option>`)}</select><input id="bamount" type="number" placeholder="monto"><input id="bdue" type="date"><button class="btn primary" onclick="addBudget()">Agregar pago</button></div><div id="budgetOut"></div>`}
+// ===== Mis productos: registro propio de productos (marca, costo, nutrición por porción) =====
+function misProductosHTML(){
+  return `<div class="card">
+    <h2 style="margin-top:0">🧾 Mis productos</h2>
+    <p class="muted" style="margin-top:0">Registra lo que compras: marca, costo y cuánto aporta por porción. Con “Comí esto” se suma a tu contador del día.</p>
+    <div class="grid">
+      <div><label>Producto</label><input id="mpName" placeholder="Ej. Leche entera"></div>
+      <div><label>Marca (opcional)</label><input id="mpBrand" placeholder="Ej. Meadow Gold"></div>
+      <div><label>Porción</label><input id="mpServing" placeholder="Ej. 1 taza"></div>
+      <div><label>Costo $ (opcional)</label><input id="mpCost" type="number" inputmode="decimal" step=".01" placeholder="por envase o porción"></div>
+      <div><label>Calorías por porción</label><input id="mpKcal" type="number" inputmode="numeric" placeholder="Ej. 150"></div>
+      <div><label>Proteína (g)</label><input id="mpProt" type="number" inputmode="decimal" placeholder="Ej. 8"></div>
+      <div><label>Carbohidratos g (opcional)</label><input id="mpCarb" type="number" inputmode="decimal"></div>
+      <div><label>Grasa g (opcional)</label><input id="mpFat" type="number" inputmode="decimal"></div>
+    </div>
+    <div class="row" style="margin-top:10px"><button class="btn primary" onclick="addMyProduct()">💾 Guardar producto</button><button class="btn" id="mpCancelEdit" style="display:none" onclick="cancelEditMyProduct()">Cancelar</button></div>
+    <div id="myProductsList" style="margin-top:12px"></div>
+  </div>`;
+}
+function renderMyProducts(){
+  let el=document.getElementById('myProductsList'); if(!el)return;
+  let list=state.myProducts||[];
+  if(!list.length){ el.innerHTML='<p class="muted">Aún no registras productos. Agrega el primero con el formulario de arriba.</p>'; return; }
+  el.innerHTML='<div class="grid">'+list.map(p=>{
+    let macros=[p.kcal?p.kcal+' kcal':'',p.prot?('P '+p.prot+'g'):'',p.carb?('C '+p.carb+'g'):'',p.fat?('G '+p.fat+'g'):''].filter(Boolean).join(' · ');
+    return `<div class="mini">
+      <b>${safeText(p.name)}</b>${p.brand?` <span class="muted">· ${safeText(p.brand)}</span>`:''}
+      <div class="muted" style="font-size:12px;margin:2px 0">${safeText(p.serving||'1 porción')}${p.cost?' · '+money(p.cost):''}</div>
+      <div style="font-size:13px;font-weight:700">${macros||'Sin datos de nutrición'}</div>
+      <div class="row" style="gap:6px;margin-top:8px">
+        <button class="btn primary" onclick="logMyProduct('${p.id}')">✅ Comí esto</button>
+        <button class="btn" onclick="editMyProduct('${p.id}')">✏️ Editar</button>
+        <button class="btn" onclick="deleteMyProduct('${p.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('')+'</div>';
+}
+function _mpClearForm(){['mpName','mpBrand','mpServing','mpCost','mpKcal','mpProt','mpCarb','mpFat'].forEach(k=>{let e=document.getElementById(k);if(e)e.value='';});let c=document.getElementById('mpCancelEdit');if(c)c.style.display='none';window._mpEditId=null;}
+function addMyProduct(){
+  let g=id=>document.getElementById(id);
+  let name=(g('mpName')?.value||'').trim();
+  if(!name){alert('Escribe al menos el nombre del producto.');return;}
+  let prod={id:window._mpEditId||ppUUID(),name,brand:(g('mpBrand').value||'').trim(),serving:(g('mpServing').value||'').trim()||'1 porción',cost:+g('mpCost').value||0,kcal:+g('mpKcal').value||0,prot:+g('mpProt').value||0,carb:+g('mpCarb').value||0,fat:+g('mpFat').value||0,updated_at:new Date().toISOString()};
+  if(!Array.isArray(state.myProducts))state.myProducts=[];
+  if(window._mpEditId){let i=state.myProducts.findIndex(x=>x.id===window._mpEditId);if(i>=0)state.myProducts[i]=prod;}
+  else state.myProducts.push(prod);
+  save();_mpClearForm();renderMyProducts();
+}
+function editMyProduct(id){
+  let p=(state.myProducts||[]).find(x=>x.id===id);if(!p)return;
+  window._mpEditId=id;
+  let set=(k,v)=>{let e=document.getElementById(k);if(e)e.value=(v==null?'':v);};
+  set('mpName',p.name);set('mpBrand',p.brand);set('mpServing',p.serving);set('mpCost',p.cost||'');set('mpKcal',p.kcal||'');set('mpProt',p.prot||'');set('mpCarb',p.carb||'');set('mpFat',p.fat||'');
+  let c=document.getElementById('mpCancelEdit');if(c)c.style.display='';
+  try{document.getElementById('mpName').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('mpName').focus();}catch(e){}
+}
+function cancelEditMyProduct(){_mpClearForm();}
+function deleteMyProduct(id){if(!confirm('¿Borrar este producto?'))return;state.myProducts=(state.myProducts||[]).filter(x=>x.id!==id);save();renderMyProducts();}
+function logMyProduct(id){
+  let p=(state.myProducts||[]).find(x=>x.id===id);if(!p)return;
+  let today=new Date().toISOString().slice(0,10);
+  if(!state.diary)state.diary={};
+  if(!state.diary[today])state.diary[today]={breakfast:[],lunch:[],dinner:[],snacks:[]};
+  state.diary[today].snacks.push({name:p.name+(p.brand?(' ('+p.brand+')'):''),kcal:+p.kcal||0,prot:+p.prot||0,carb:+p.carb||0,fat:+p.fat||0});
+  save();
+  try{if(document.getElementById('diaryOut'))renderDiary();}catch(e){}
+  alert('✅ '+p.name+' agregado a tu contador de hoy.');
+}
 function secPrecios(){
   let today=new Date();
   let dayName=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][today.getDay()];
@@ -4358,7 +4426,8 @@ function secPrecios(){
   // Build the HTML
   let storeKeys=Object.keys(stores);
   let html=`
-  <h2>🛒 Precios del día — Maui</h2>
+  ${misProductosHTML()}
+  <h2 style="margin-top:20px">🛒 Precios del día — Maui</h2>
   <div style="background:linear-gradient(135deg,#15704f,#1a9660);border-radius:16px;padding:12px 16px;color:#fff;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
     <div>
       <div style="font-size:13px;opacity:.8">Actualizado</div>
@@ -7516,7 +7585,7 @@ function ownMauiPantry(i){
   let out=document.getElementById('fridgeOut');if(out)out.innerHTML='<div class="ok"><b>Agregado a tu nevera:</b> '+safeText(x.name)+'. Ahora puedes tocar Crear comida o Lista de compra.</div>';
 }
 
-function bindAll(){try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);}
+function bindAll(){try{renderMyProducts()}catch(e){}try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);}
 function convertWorkoutWeight(source){
   let lb=document.getElementById('workoutLb'),kg=document.getElementById('workoutKg'),out=document.getElementById('workoutWeightOut');
   if(!lb||!kg||!out)return;
@@ -10984,7 +11053,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.3.0';
+    window.HM_APP_VERSION='46.4.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

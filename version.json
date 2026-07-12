@@ -1,8 +1,21 @@
 {
-  "latest": "46.3.0",
+  "latest": "46.4.0",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.4.0",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Mis productos: registra lo que compras (marca, costo y calorias/proteina por porcion) en la seccion Precios",
+        "Boton Comi esto en cada producto para sumarlo al contador del dia"
+      ],
+      "cambios": [
+        "Puedes editar y borrar tus productos guardados; se sincronizan con tu cuenta"
+      ],
+      "errores": []
+    },
     {
       "version": "46.3.0",
       "date": "2026-07-11",
