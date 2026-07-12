@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.6.1';
+  window.HM_APP_VERSION='46.7.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -447,7 +447,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       </div>
     </div>
     <div class="appStatusBox">
-      <span class="versionChip">v46.6.1</span>
+      <span class="versionChip">v46.7.0</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -7027,19 +7027,12 @@ function renderAjustesUnificados(){
       +'<div class="row" style="gap:8px;flex-wrap:wrap">'+Object.keys(PP_THEMES).map(function(k){var t=PP_THEMES[k];return '<button class="btn'+(themeKey===k?' primary':'')+'" style="border-left:14px solid '+t.g+'" onclick="setTheme(\''+k+'\')">'+t.nombre+'</button>';}).join('')+'</div>'
       +'<div class="row" style="gap:8px;margin-top:12px"><button class="btn" onclick="toggleDarkMode()">'+((state.uiSettings&&state.uiSettings.dark)?'☀️ Desactivar modo nocturno':'🌙 Activar modo nocturno')+'</button></div>'
     +'</div></details>'
-    +'<details class="settings-clean-details acc" ontoggle="accordion(this)"><summary>📊 Datos rápidos (comida y metas)</summary><div class="card"><div class="grid">'
-      +'<div><label>Peso (lb)</label><input type="number" step=".1" inputmode="decimal" value="'+(p.peso||150)+'" onchange="state.profile.peso=+this.value;quickSaved()"></div>'
-      +'<div><label>Estatura (cm)</label><input type="number" inputmode="numeric" value="'+(p.altura||170)+'" onchange="state.profile.altura=+this.value;quickSaved()"></div>'
-      +'<div><label>Objetivo</label><select onchange="state.profile.objetivo=this.value;quickSaved()">'+['ganar peso','ganar músculo','mantener','bajar grasa'].map(function(o){return '<option'+(p.objetivo===o?' selected':'')+'>'+o+'</option>';}).join('')+'</select></div>'
-      +'<div><label>Pasos por día</label><input type="number" step="500" inputmode="numeric" value="'+(p.pasosDia||18000)+'" onchange="state.profile.pasosDia=+this.value;quickSaved()"></div>'
-      +'<div><label>Presupuesto comida/semana ($)</label><input type="number" inputmode="numeric" value="'+((state.expenseSettings&&state.expenseSettings.foodLimit)||700)+'" onchange="state.expenseSettings=state.expenseSettings||{};state.expenseSettings.foodLimit=+this.value;quickSaved()"></div>'
-    +'</div><button class="btn" style="margin-top:8px" onclick="openTab(\'🍽️ Recetas\')">🍳 Configurar Mi cocina</button></div></details>'
     +'<details class="settings-clean-details acc" ontoggle="accordion(this)"><summary>🔔 Notificaciones</summary><div class="card">'
       +'<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" '+((state.uiSettings&&state.uiSettings.notif)?'checked':'')+' onchange="state.uiSettings.notif=this.checked;quickSaved()"> Avisos y recordatorios dentro de la app</label>'
     +'</div></details>'
     +'<details class="settings-clean-details acc" ontoggle="accordion(this)"><summary>☁️ Cuenta</summary><div class="card">'
       +'<p class="muted" style="margin:0 0 8px">Sesión: '+safeText((getCloudSession()&&getCloudSession().user&&getCloudSession().user.email)||'sin sesión')+'</p>'
-      +'<div class="row" style="gap:8px">'+(getCloudSession()?'<button class="btn primary" onclick="syncNow()">🔄 Sincronizar ahora</button><button class="btn" onclick="cloudSignOut()">🚪 Salir</button>':'<button class="btn primary" onclick="showLoginScreen()">🔑 Iniciar sesión</button>')+'</div>'
+      +'<div class="row" style="gap:8px">'+(getCloudSession()?'<button class="btn primary" onclick="syncNow()">🔄 Sincronizar ahora</button><button class="btn" onclick="showResetPasswordScreen()">🔑 Cambiar contraseña</button><button class="btn" onclick="if(confirm(\'¿Cerrar sesión? Tus datos quedan en la nube.\'))cloudSignOut()">🚪 Salir</button>':'<button class="btn primary" onclick="showLoginScreen()">🔑 Iniciar sesión</button><span class="muted" style="font-size:12px;align-self:center">¿Olvidaste tu contraseña? Entra y toca "¿Olvidaste tu contraseña?"</span>')+'</div>'
     +'</div></details>'
   +'</div>';
 }
@@ -11091,7 +11084,8 @@ function hmv413InventoryReal(){
 }
 var hmv413OldSecCentro=secCentro;
 secCentro=function(){
-  return `<h2>🧭 Centro de control</h2>${hmv413DataSummary()}${hmv413BackupPanel()}${hmv413Alerts()}${hmv413ConnectionMap()}${hmv413InventoryReal()}${hmv413ModeBySection()}<details><summary>⚙️ Centro anterior y herramientas avanzadas</summary><div class="card">${hmv413OldSecCentro()}</div></details>`;
+  // Limpiado: se quitaron respaldo duplicado, alertas, inventario duplicado, Personal/Profesional y el "Centro anterior" que repetía Centro simple.
+  return `<h2>🧭 Centro de control</h2>${hmv413DataSummary()}${hmv413ConnectionMap()}`;
 };
 var hmv413OldSecBase=secBase;
 secBase=function(){return `<h2>📊 Base de datos y seguridad</h2>${hmv413DataSummary()}${hmv413BackupPanel()}<details open><summary>Estado técnico</summary><div class="card">${hmv413OldSecBase()}</div></details>`};
@@ -11221,7 +11215,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.6.1';
+    window.HM_APP_VERSION='46.7.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
@@ -11326,7 +11320,9 @@ tryLoadIDB();
         <button class="btn primary big-profile-btn" style="margin-top:8px" onclick="calcMacros();document.getElementById('macroOut')&&document.getElementById('macroOut').scrollIntoView({behavior:'smooth',block:'start'})">Calcular cuánto debo comer</button>
         <div id="macroOut" class="card macro-out-clean"></div>
       </div>
-      ${perfilCuentaHTML()}
+      <h3 style="margin:14px 0 4px">⚙️ Configuración y cuenta</h3>
+      ${renderAjustesUnificados()}
+      <details class="settings-clean-details acc" ontoggle="if(this.open){try{accordion(this)}catch(e){}try{ppCheckUpdates(false)}catch(e){}}"><summary>📥 Actualizaciones</summary><div class="card"><div id="actualizacionesOut"></div></div></details>
       `;
     };
 
@@ -11344,8 +11340,7 @@ tryLoadIDB();
         </div>
         <span class="settings-status ${rec.yes?'need':'ok'}">${rec.yes?'Respaldo recomendado':'Todo tranquilo'}</span>
       </div>
-      ${renderAjustesUnificados()}
-      <details class="settings-clean-details" ontoggle="if(this.open){try{ppCheckUpdates(false)}catch(e){}}"><summary>📥 Actualizaciones</summary><div class="card"><div id="actualizacionesOut"></div></div></details>
+      <p class="muted" style="margin:0 0 10px">Tu información y configuración están en <b>👤 Perfil</b>. Aquí solo quedan las herramientas de dueño (respaldo, base de datos, secciones).</p>
       ${ppIsOwner()?`
       <div class="settings-main-actions">
         <button class="btn primary" onclick="hmv413MarkBackup&&hmv413MarkBackup();exportData&&exportData()">⬇️ Descargar respaldo</button>

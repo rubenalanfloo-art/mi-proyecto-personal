@@ -1,8 +1,20 @@
 {
-  "latest": "46.6.1",
+  "latest": "46.7.0",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.7.0",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Toda tu configuracion y cuenta ahora en un solo lugar: Perfil (info, apariencia, notificaciones, cuenta, actualizaciones)"
+      ],
+      "cambios": [
+        "Se quitaron duplicados y cosas que casi no se usaban: Personal/Profesional, respaldo repetido, alertas, inventario duplicado y Centro anterior"
+      ],
+      "errores": []
+    },
     {
       "version": "46.6.1",
       "date": "2026-07-11",
