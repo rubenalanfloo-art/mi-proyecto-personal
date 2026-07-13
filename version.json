@@ -1,8 +1,21 @@
 {
-  "latest": "46.9.0",
+  "latest": "46.10.0",
   "date": "2026-07-12",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.10.0",
+      "date": "2026-07-12",
+      "type": "recomendada",
+      "nuevas": [
+        "Ejercicio: nuevo boton 'Crear rutina' con un formulario de tus datos (peso, altura, pasos, que quieres) y que tan fuerte hoy: Cansado, Normal, Fuerte o Demasiado fuerte",
+        "Nuevo nivel 'Demasiado fuerte' (hasta 8 ejercicios y mas series) para dias de empuje"
+      ],
+      "cambios": [
+        "Ejercicio: se quitaron los botones 'Estoy cansado' y 'Poco tiempo'; ahora todo se elige al crear la rutina"
+      ],
+      "errores": []
+    },
     {
       "version": "46.9.0",
       "date": "2026-07-12",

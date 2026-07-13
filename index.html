@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.9.0';
+  window.HM_APP_VERSION='46.10.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -4018,8 +4018,7 @@ function secEjercicio(){
     <p class="muted" style="margin-top:0">Elige qué hacer hoy. Todo aparece aquí mismo — sin cambiar de pantalla.</p>
     <div class="row" style="gap:8px;flex-wrap:wrap">
       <button class="btn primary" onclick="quickFitnessToday()">🏋️ Mi rutina de hoy</button>
-      <button class="btn" onclick="modifyFitnessOnlyToday('cansado')">😴 Estoy cansado</button>
-      <button class="btn" onclick="modifyFitnessOnlyToday('poco_tiempo')">⏱️ Poco tiempo</button>
+      <button class="btn" onclick="openCreateRoutine()">🛠️ Crear rutina</button>
       <button class="btn" onclick="renderSimpleFitnessProgress()">📊 Progreso</button>
       <button class="btn" onclick="showSavedRoutines()">📁 Rutinas guardadas</button>
     </div>
@@ -4029,7 +4028,7 @@ function secEjercicio(){
       <div class="fit-clean-chip"><b>${weekCount}</b><span>registros esta semana</span></div>
     </div>
     <div id="routineTodayOut"></div>
-    <div id="simpleFitnessOut" class="fit-clean-result" style="margin-top:12px"><div class="muted">Toca <b>🏋️ Mi rutina de hoy</b> para ver tu rutina, registrar el peso y ajustar el esfuerzo.</div></div>
+    <div id="simpleFitnessOut" class="fit-clean-result" style="margin-top:12px"><div class="muted">Toca <b>🏋️ Mi rutina de hoy</b> para ver tu rutina, o <b>🛠️ Crear rutina</b> para armarla con tus datos (peso, altura, pasos) y qué tan fuerte quieres hoy.</div></div>
   </div>
   <details id="savedRoutinesDetails" class="fit-clean-details">
     <summary>📁 Rutinas guardadas</summary>
@@ -9110,9 +9109,9 @@ function quickFitnessToday(){
   </div>
   ${(function(){var ef=state.fitEffort||'auto';return `<div style="margin:8px 0 10px">
     <div class="muted" style="font-size:12px;font-weight:800;margin-bottom:5px">¿Qué tan fuerte hoy?</div>
-    <div class="row" style="gap:6px;flex-wrap:wrap">${[['suave','🟢 Suave'],['auto','⚙️ Auto'],['normal','🟡 Normal'],['fuerte','🔴 Fuerte · crecer']].map(function(o){return '<button class="btn'+(ef===o[0]?' primary':'')+'" style="font-size:12px;padding:7px 11px" onclick="setFitEffort(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')}<button class="btn" style="font-size:12px;padding:7px 11px" onclick="varyFitnessToday()">🎲 Variar ejercicios</button><button class="btn" style="font-size:12px;padding:7px 11px" onclick="saveCurrentRoutine()">💾 Guardar esta rutina</button></div>
+    <div class="row" style="gap:6px;flex-wrap:wrap">${[['suave','🟢 Suave'],['auto','⚙️ Auto'],['normal','🟡 Normal'],['fuerte','🔴 Fuerte · crecer'],['extremo','💥 Demasiado fuerte']].map(function(o){return '<button class="btn'+(ef===o[0]?' primary':'')+'" style="font-size:12px;padding:7px 11px" onclick="setFitEffort(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')}<button class="btn" style="font-size:12px;padding:7px 11px" onclick="varyFitnessToday()">🎲 Variar ejercicios</button><button class="btn" style="font-size:12px;padding:7px 11px" onclick="saveCurrentRoutine()">💾 Guardar esta rutina</button></div>
     <div class="muted" style="font-size:11px;margin-top:5px">Los ejercicios cambian cada día para no aburrirte. Toca 🎲 para otra variación, o "Cambiar si está ocupado" en cada uno.</div>
-    ${ef==='fuerte'?'<div class="mini" style="margin-top:8px;font-size:12px">💪 <b>Para crecer músculo con tu trabajo físico:</b> come <b>de más</b> con proteína, sube el peso al completar las reps y duerme bien. Caminar/jardinear es cardio, no cuenta como músculo.</div>':''}
+    ${(ef==='fuerte'||ef==='extremo')?'<div class="mini" style="margin-top:8px;font-size:12px">💪 <b>Para crecer músculo con tu trabajo físico:</b> come <b>de más</b> con proteína, sube el peso al completar las reps y duerme bien. Caminar/jardinear es cardio, no cuenta como músculo.</div>':''}
   </div>`;})()}
   <div class="fit-list-compact">${plan.map((x,i)=>{
     let done=!!pack.checked[i];
@@ -9635,9 +9634,10 @@ function buildFitnessTodayPlan(ctx){
   let b=fitnessExerciseBank();
   // Esfuerzo elegido por el usuario: 'suave' | 'auto' | 'normal' | 'fuerte'. Por defecto 'auto' (detecta día pesado).
   let effort=state.fitEffort||'auto';
-  let big=effort==='fuerte';
-  // "día pesado efectivo": suave o (auto en día pesado) acortan; normal y fuerte NO acortan aunque haya caminado mucho.
-  let hardSel = (effort==='suave') ? true : ((effort==='normal'||effort==='fuerte') ? false : ctx.hard);
+  let extreme=effort==='extremo';
+  let big=effort==='fuerte'||extreme;
+  // "día pesado efectivo": suave o (auto en día pesado) acortan; normal, fuerte y extremo NO acortan aunque haya caminado mucho.
+  let hardSel = (effort==='suave') ? true : ((effort==='normal'||effort==='fuerte'||extreme) ? false : ctx.hard);
   let keys=hardSel?['press','row','lat','core']:['press','row','pull','lat','curl'];
   if(ctx.focus.includes('Espalda'))keys=hardSel?['row','pull','face','curl']:['row','pull','face','press','curl'];
   if(ctx.focus.includes('Brazos'))keys=hardSel?['curl','tri','lat','core']:['press','row','curl','tri','lat'];
@@ -9646,7 +9646,7 @@ function buildFitnessTodayPlan(ctx){
   if(ctx.focus.includes('Pierna')||ctx.focus.includes('Tren inferior'))keys=hardSel?['leg','hip','core']:['leg','ham','hip','calf'];
   if(ctx.focus.includes('Tren superior'))keys=hardSel?['press','row','lat','core']:['press','row','pull','lat','curl','tri'];
   if(ctx.recovery)keys=['mobility','core','face']; // seguridad: si vienes con dolor fuerte/energía muy baja, entrena suave aunque elijas fuerte
-  if(big&&!ctx.recovery){ let extra=(ctx.focus.includes('Pierna')||ctx.focus.includes('Tren inferior'))?['leg','ham','hip','calf','core']:['pull','tri','curl','face','hip']; keys=[...new Set([...keys,...extra])].slice(0,6); } // versión para crecer: 6 ejercicios
+  if(big&&!ctx.recovery){ let extra=(ctx.focus.includes('Pierna')||ctx.focus.includes('Tren inferior'))?['leg','ham','hip','calf','core']:['pull','tri','curl','face','hip']; keys=[...new Set([...keys,...extra])].slice(0,extreme?8:6); } // versión para crecer: 6 ejercicios (8 en "demasiado fuerte")
   let seedBase=fitDaySeed()+(state.fitVariant||0); // cambia cada día y con el botón "Variar"
   return keys.map((k,idx)=>{
     let x={...b[k]};
@@ -9658,7 +9658,7 @@ function buildFitnessTodayPlan(ctx){
     else { let s=seedBase+idx*3; pick=pool[((s%pool.length)+pool.length)%pool.length]; }
     x.name=pick;
     x.alts=pool.filter(a=>a!==pick); // el resto queda como alternativas en "Cambiar si está ocupado"
-    if(big&&!ctx.recovery){x.sets=Math.max(3,x.sets);x.note='Crecer músculo: 3-4 series, cerca del fallo (deja 1-2 en reserva) y sube peso al completar las reps.'}
+    if(big&&!ctx.recovery){x.sets=Math.max(extreme?4:3,x.sets);x.note=(extreme?'Demasiado fuerte: 4-5 series, cerca del fallo (deja 1 en reserva), buen descanso y sube peso al completar las reps. Cuida la técnica.':'Crecer músculo: 3-4 series, cerca del fallo (deja 1-2 en reserva) y sube peso al completar las reps.')}
     else if(hardSel){x.sets=Math.min(2,x.sets);x.note='Día pesado: deja 1-2 repeticiones en reserva.'}
     else x.note='Día normal: controla técnica y sube peso solo si se siente estable.';
     return x;
@@ -9669,6 +9669,63 @@ function setFitEffort(e){
   try{createFitnessToday();}catch(err){}
   try{renderFitnessCoach();}catch(err){}
   try{quickFitnessToday();}catch(err){}
+}
+// Lista de objetivos (misma que el select "Qué quiero hoy")
+var FIT_GOALS=['Ganar músculo sin quedar molido','Tren superior','Tren inferior','Pecho','Espalda y hombros','Brazos','Pierna y glúteos','Calistenia','Yoga','Corrido (cardio)','Core y movilidad','Recuperar'];
+// Intensidad del formulario "Crear rutina" (palabras del usuario -> nivel de esfuerzo del motor)
+var FIT_EFFORTS=[['suave','😴 Cansado'],['normal','🟡 Normal'],['fuerte','🔴 Fuerte'],['extremo','💥 Demasiado fuerte']];
+function setCrEffort(e){
+  window._crEffort=e;
+  var row=document.getElementById('crEffortRow');
+  if(row)Array.prototype.forEach.call(row.querySelectorAll('.btn'),function(b){b.classList.toggle('primary',b.getAttribute('data-e')===e);});
+}
+function openCreateRoutine(){
+  var out=document.getElementById('simpleFitnessOut'); if(!out)return;
+  var p=state.profile||{};
+  var eff=window._crEffort||(['suave','normal','fuerte','extremo'].indexOf(state.fitEffort)>=0?state.fitEffort:'normal');
+  window._crEffort=eff;
+  var curGoal=(state.fitnessToday&&state.fitnessToday.ctx&&state.fitnessToday.ctx.focus)||p.objetivoFit||'Ganar músculo sin quedar molido';
+  if(FIT_GOALS.indexOf(curGoal)<0)curGoal='Ganar músculo sin quedar molido';
+  out.innerHTML='<div class="fit-clean-result">'
+    +'<h3 style="margin-top:0">🛠️ Crear rutina</h3>'
+    +'<p class="muted" style="margin-top:0;font-size:13px">Ajusta tus datos y elige qué tan fuerte quieres entrenar hoy. La rutina se arma aquí abajo.</p>'
+    +'<div class="grid">'
+    +'<div><label>Peso (lb)</label><input id="crPeso" type="number" inputmode="decimal" step="0.1" placeholder="Ej. 165" value="'+(p.peso||'')+'"></div>'
+    +'<div><label>Altura (cm)</label><input id="crAltura" type="number" inputmode="decimal" placeholder="Ej. 175" value="'+(p.altura||'')+'"></div>'
+    +'<div><label>Pasos al día</label><input id="crSteps" type="number" inputmode="numeric" placeholder="Ej. 22000" value="'+(p.pasosDia||22000)+'"></div>'
+    +'<div><label>Qué quieres</label><select id="crGoal">'+FIT_GOALS.map(function(g){return '<option'+(g===curGoal?' selected':'')+'>'+safeText(g)+'</option>';}).join('')+'</select></div>'
+    +'</div>'
+    +'<label style="display:block;margin-top:10px;font-weight:800;font-size:13px">Qué tan fuerte hoy</label>'
+    +'<div id="crEffortRow" class="row" style="gap:6px;flex-wrap:wrap;margin-top:4px">'+FIT_EFFORTS.map(function(o){return '<button class="btn'+(eff===o[0]?' primary':'')+'" data-e="'+o[0]+'" onclick="setCrEffort(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')+'</div>'
+    +'<button class="btn primary" style="width:100%;margin-top:12px;padding:13px;font-size:15px" onclick="crearRutina()">✅ Crear mi rutina</button>'
+    +'</div>';
+  try{out.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
+}
+function crearRutina(){
+  var g=function(id){return document.getElementById(id);};
+  var peso=parseFloat((g('crPeso')||{}).value)||0;
+  var altura=parseFloat((g('crAltura')||{}).value)||0;
+  var steps=parseInt((g('crSteps')||{}).value,10); if(!isFinite(steps))steps=22000;
+  var goal=(g('crGoal')||{}).value||'Ganar músculo sin quedar molido';
+  var effort=window._crEffort||'normal';
+  // Guardar los índices en el perfil para no volver a escribirlos
+  if(!state.profile)state.profile={};
+  if(peso)state.profile.peso=peso;
+  if(altura)state.profile.altura=altura;
+  if(isFinite(steps))state.profile.pasosDia=steps;
+  state.profile.objetivoFit=goal;
+  state.fitEffort=effort;
+  // Reflejar el objetivo en el select de ajustes (para que todo quede consistente)
+  var sg=g('simpleFitGoal'); if(sg)sg.value=goal;
+  // Construir el contexto y la rutina directamente con estos datos
+  var energy=3,pain=0,sleep=7;
+  var hard=steps>=22000||energy<=2||pain>=2||sleep<6;
+  var recovery=pain>=3||energy<=1;
+  var equip=(g('simpleFitEquip')||{}).value||'Gimnasio';
+  var ctx={date:todayISO(),steps:steps,energy:energy,pain:pain,sleep:sleep,focus:goal,equip:equip,hard:hard,recovery:recovery};
+  state.fitnessToday={date:ctx.date,ctx:ctx,plan:buildFitnessTodayPlan(ctx),createdAt:new Date().toISOString()};
+  save();
+  quickFitnessToday();
 }
 function todayRoutinePlan(){
   let r=state.customRoutine;if(!r||!r.days||!r.days.length)return null;
@@ -11383,7 +11440,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.9.0';
+    window.HM_APP_VERSION='46.10.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
