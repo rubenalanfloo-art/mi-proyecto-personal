@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.16.0';
+  window.HM_APP_VERSION='46.17.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -2422,6 +2422,51 @@ function addFull(o){
    method:'licuadora',temp:'Frío',conservar:'Mejor recién hecho.',duracion:'12 h en refri (agita).',recalentar:'No aplica.',llevarTrabajo:'Sí, en botella con hielo.'}
 ].forEach(addFull);
 
+// ===== Nuevas recetas (2026): 🥚 huevos en salsa, bebidas combinadas, sueros y sazonadores =====
+[
+  {name:'Huevos cocidos en salsa roja',type:'huevo',time:15,k:240,p:15,carbs:9,grasas:16,cost:1.1,porciones:'1',dificultad:'Fácil',
+   tags:'huevo proteina economico rapido salsa roja mexicana ganar musculo desayuno',ingredients:'3 huevos, 3 jitomates, ¼ cebolla, 1 diente ajo, 1-2 chiles de árbol o serrano, sal, aceite',
+   steps:['Cuece los huevos 10 min en agua hirviendo, pélalos y pártelos a la mitad.','Licúa jitomate, cebolla, ajo y chile con un poco de sal.','Fríe la salsa en 1 cda de aceite 5 min hasta que espese.','Agrega los huevos partidos y baña con la salsa 2 min.','Sirve con tortillas o arroz.'],
+   method:'estufa',temp:'Estufa: fuego medio',conservar:'Refrigerador tapado.',duracion:'2-3 días.',recalentar:'Sartén o microondas 1-2 min.',llevarTrabajo:'Sí, en termo o taper. Rico con tortillas.'},
+  {name:'Huevos cocidos en salsa verde',type:'huevo',time:15,k:230,p:15,carbs:8,grasas:15,cost:1.1,porciones:'1',dificultad:'Fácil',
+   tags:'huevo proteina economico rapido salsa verde tomatillo mexicana ganar musculo',ingredients:'3 huevos, 5 tomatillos (tomate verde), ¼ cebolla, 1 ajo, 1 chile serrano, cilantro, sal, aceite',
+   steps:['Cuece los huevos 10 min, pélalos y pártelos.','Hierve los tomatillos con el chile 5 min y licúalos con cebolla, ajo, cilantro y sal.','Fríe la salsa en 1 cda de aceite 5 min.','Agrega los huevos y calienta 2 min.','Sirve con tortillas.'],
+   method:'estufa',temp:'Estufa: fuego medio',conservar:'Refrigerador tapado.',duracion:'2-3 días.',recalentar:'Sartén o microondas 1-2 min.',llevarTrabajo:'Sí, en taper.'},
+  {name:'Huevos en salsa chipotle cremosa',type:'huevo',time:15,k:280,p:16,carbs:9,grasas:20,cost:1.3,porciones:'1',dificultad:'Fácil',
+   tags:'huevo proteina rapido chipotle cremoso mexicana ganar peso ganar musculo',ingredients:'3 huevos, 2 chiles chipotle en adobo, ½ taza crema o leche evaporada, ¼ cebolla, 1 ajo, sal',
+   steps:['Cuece los huevos 10 min y pártelos a la mitad.','Licúa chipotle, crema, cebolla, ajo y una pizca de sal hasta cremoso.','Calienta la salsa en el sartén 4 min sin que hierva fuerte.','Agrega los huevos y baña 2 min.','Sirve con arroz o pan.'],
+   method:'estufa',temp:'Estufa: fuego bajo-medio',conservar:'Refrigerador tapado.',duracion:'2-3 días.',recalentar:'Sartén suave o microondas 1-2 min.',llevarTrabajo:'Sí, en taper.'},
+  {name:'Huevos cocidos estilo búfalo',type:'huevo',time:12,k:250,p:16,carbs:3,grasas:19,cost:1.2,porciones:'1',dificultad:'Fácil',
+   tags:'huevo proteina rapido bufalo picante snack ganar musculo trabajo',ingredients:'3 huevos, 3 cdas salsa búfalo (tipo Frank o similar), 1 cda mantequilla, sal, apio opcional',
+   steps:['Cuece los huevos 10 min y pélalos.','Derrite la mantequilla y mézclala con la salsa búfalo.','Baña los huevos partidos con la salsa búfalo caliente.','Sirve como snack alto en proteína, con apio si quieres.'],
+   method:'estufa',temp:'Estufa: fuego bajo',conservar:'Refrigerador; salsa aparte si puedes.',duracion:'2-3 días.',recalentar:'Microondas 40-60 s.',llevarTrabajo:'Sí, excelente snack de proteína para el trabajo.'},
+  {name:'Huevos rancheros',type:'huevo',time:12,k:320,p:16,carbs:22,grasas:18,cost:1.3,porciones:'1',dificultad:'Fácil',
+   tags:'huevo proteina desayuno rancheros tortilla mexicana ganar musculo',ingredients:'2 huevos, 2 tortillas, 1 taza salsa roja o verde, aceite, frijoles opcional, queso',
+   steps:['Fríe ligeramente las tortillas en un poco de aceite.','Estrella los huevos en el mismo sartén al gusto.','Calienta la salsa aparte 3 min.','Pon las tortillas, encima los huevos y baña con la salsa.','Sirve con frijoles y queso.'],
+   method:'estufa',temp:'Estufa: fuego medio',conservar:'Mejor recién hechos.',duracion:'1 día.',recalentar:'Sartén 2 min.',llevarTrabajo:'Regular; mejor recién hecho.'},
+  {name:'Huevos duros con sazonador de especias',type:'huevo',time:12,k:180,p:13,carbs:2,grasas:13,cost:0.9,porciones:'1',dificultad:'Fácil',
+   tags:'huevo proteina snack rapido especias economico ganar musculo trabajo',ingredients:'3 huevos, sal, pimienta, ajo en polvo, cebolla en polvo, pizca de comino y paprika (o Tajín)',
+   steps:['Cuece los huevos 10 min, enfríalos en agua y pélalos.','Mezcla sal, pimienta, ajo, cebolla, comino y paprika.','Parte los huevos y espolvorea el sazonador (o Tajín).','Snack de proteína listo para llevar.'],
+   method:'sin cocinar',temp:'Se comen fríos o tibios',conservar:'Refrigerador; ya cocidos duran bien.',duracion:'3-4 días con cáscara.',recalentar:'No hace falta.',llevarTrabajo:'Ideal: cuece varios el domingo y llévalos toda la semana.'}
+].forEach(addFull);
+// Bebidas combinadas (fruta)
+add('bebida','Agua de mango con coco',5,190,2,1.2,['Licúa el mango con el agua de coco y el agua.','Cuela si quieres y agrega hielo.','Endulza poco: el mango ya es dulce.'],'licuadora','bebida fruta refrescante mango coco tropical','Fría con hielo','1 mango, 1 taza agua de coco, ½ taza agua, hielo, poca azúcar');
+add('bebida','Agua de piña con coco',5,200,2,1.1,['Licúa la piña con la leche de coco y el agua.','Agrega hielo y sirve.','Sabe a piña colada sin alcohol.'],'licuadora','bebida fruta piña coco tropical refrescante','Fría con hielo','2 rebanadas de piña, 1 taza leche o agua de coco, ½ taza agua, hielo');
+add('bebida','Licuado de fresa con plátano',5,260,8,1.3,['Pon plátano, fresas y leche en la licuadora.','Licúa 40 seg.','Endulza con un poco de miel y agrega hielo.'],'licuadora','bebida licuado fresa platano leche ganar peso','Frío','1 plátano, 1 taza fresas, 1 taza leche, miel, hielo');
+add('bebida','Agua de sandía con limón y menta',6,110,1,0.9,['Licúa la sandía con agua.','Cuela y agrega el jugo de limón y la menta.','Sirve muy fría con hielo.'],'licuadora','bebida fruta sandia limon menta refrescante ligero','Fría con hielo','2 tazas de sandía, jugo de 1 limón, hojas de menta, agua, hielo');
+add('bebida','Agua de mango con maracuyá',6,160,2,1.4,['Licúa el mango con la pulpa de maracuyá y el agua.','Cuela las semillas si quieres.','Endulza poco y sirve con hielo.'],'licuadora','bebida fruta mango maracuya tropical','Fría con hielo','1 mango, 2 maracuyás (pulpa), agua, hielo, poca azúcar');
+add('bebida','Horchata con fresa',5,240,5,1.0,['Licúa las fresas con un poco de la horchata.','Mezcla con el resto de la horchata.','Sirve muy fría con hielo.'],'sin cocinar','bebida horchata fresa dulce ganar peso','Fría con hielo','1.5 taza horchata preparada, ½ taza fresas, hielo');
+// Sueros (hidratación para calor / trabajo físico)
+add('suero','Suero de coco y limón',5,90,1,1.0,['Mezcla el agua de coco con el agua.','Agrega el jugo de limón y una pizca de sal.','Toma frío durante o después del trabajo con calor.'],'sin cocinar','suero hidratacion electrolitos coco trabajo calor jardinero','Frío','1 taza agua de coco, 1 taza agua, jugo de ½ limón, pizca de sal');
+add('suero','Suero casero de naranja y sal',5,100,1,0.7,['Exprime las naranjas en 1 L de agua.','Agrega el azúcar y la sal y revuelve.','Toma frío a sorbos.'],'sin cocinar','suero hidratacion electrolitos naranja trabajo calor','Frío','1 L agua, jugo de 2 naranjas, 6 cditas azúcar, ½ cdita sal');
+add('suero','Suero fuerte para calor extremo',5,110,0,0.6,['Disuelve el azúcar, la sal y el bicarbonato en 1 L de agua.','Agrega el jugo de limón.','Toma a sorbos durante la jornada de calor para reponer sales.'],'sin cocinar','suero hidratacion electrolitos jardinero trabajo calor sudor bicarbonato','Frío','1 L agua, 6 cditas azúcar, ½ cdita sal, ¼ cdita bicarbonato, jugo de 1 limón');
+add('suero','Suero de jamaica con electrolitos',6,90,0,0.7,['Prepara agua de jamaica sin mucha azúcar.','Agrega el azúcar, la sal y el jugo de limón.','Sirve muy fría; buena para reponer líquidos.'],'sin cocinar','suero hidratacion jamaica electrolitos trabajo calor','Frío','1 L agua de jamaica, 4 cditas azúcar, ½ cdita sal, jugo de 1 limón');
+// Sazonadores / mezclas de especias
+add('especia','Sazonador para huevos y carne',3,10,1,0.5,['Mezcla todo en un frasco seco.','Tapa y agita.','Úsalo en huevos, carne, pollo o papas.'],'sin cocinar','especia sazonador ajo cebolla comino condimento','Seco, en frasco','2 cdas sal, 1 cda ajo en polvo, 1 cda cebolla en polvo, 1 cdita pimienta, 1 cdita comino, 1 cdita paprika');
+add('especia','Adobo casero seco',3,10,1,0.6,['Mezcla todas las especias en un frasco.','Tapa bien y agita.','Úsalo para sazonar pollo, carne o cerdo antes de cocinar.'],'sin cocinar','especia adobo sazonador condimento carne pollo','Seco, en frasco','1 cda sal, 1 cda ajo en polvo, 1 cda orégano, 1 cdita comino, 1 cdita pimienta, 1 cdita paprika, ½ cdita cúrcuma');
+add('especia','Chile-limón estilo Tajín casero',3,5,0,0.5,['Mezcla el chile, la sal y el limón en polvo.','Agrega una pizca de azúcar.','Espolvorea en fruta, pepino, jícama o snacks.'],'sin cocinar','especia chile limon tajin fruta snack condimento','Seco, en frasco','2 cdas chile en polvo, 1 cda sal, 1 cda limón en polvo, pizca de azúcar');
+add('especia','Sal de ajo y hierbas',3,5,0,0.5,['Mezcla la sal con el ajo y las hierbas secas.','Guarda en frasco tapado.','Úsala en carnes, papas, verduras o pan de ajo.'],'sin cocinar','especia sal ajo hierbas condimento','Seco, en frasco','3 cdas sal, 1 cda ajo en polvo, 1 cda perejil seco, 1 cdita orégano, 1 cdita romero');
+
 // ===== v44 Fase A: id estable de recetas + campos opcionales + migración de favoritos =====
 // Genera un identificador estable a partir de tipo+nombre (sin acentos ni símbolos).
 function recipeSlug(r){
@@ -2566,7 +2611,7 @@ function recShortDesc(r){
   let txt=ing.join(', ');
   return 'Con '+txt.charAt(0).toLowerCase()+txt.slice(1)+'.';
 }
-const RCT_TIPO_CHIPS=[['desayuno','Desayunos'],['comida','Comidas'],['cena','Cenas'],['sopa','Sopas'],['arroz','Arroces'],['pasta','Pastas'],['pollococido','Pollo'],['postre','Postres'],['licuado','Licuados'],['snack','Snacks']];
+const RCT_TIPO_CHIPS=[['desayuno','Desayunos'],['comida','Comidas'],['huevo','Huevos'],['cena','Cenas'],['sopa','Sopas'],['arroz','Arroces'],['pasta','Pastas'],['pollococido','Pollo'],['postre','Postres'],['licuado','Licuados'],['bebida','Bebidas'],['suero','Sueros'],['snack','Snacks']];
 const RCT_COSTO_CHIPS=[['bajo','Bajo'],['medio','Medio'],['alto','Alto']];
 const RCT_TIEMPO_CHIPS=[['rapidas','Rápidas'],['promedio','Promedio'],['tardadas','Tardadas']];
 const RCT_OBJETIVO_CHIPS=[['ganar peso','Ganar peso'],['ganar musculo','Ganar músculo'],['proteina','Alta proteína']];
@@ -3063,7 +3108,7 @@ function foodPickPool(goal){
   return {pool,kw};
 }
 function mealTypeLabel(type){
-  return ({desayuno:'🌅 Desayuno',comida:'🍽️ Comida',cena:'🌙 Cena',licuado:'🥤 Licuado',snack:'🍿 Snack / merienda',fruta:'🍓 Fruta',agua:'💧 Agua fresca',bebida:'☕ Bebida',suero:'💧 Suero',especia:'🧂 Sazonador',salsa:'🌶️ Salsa',aderezo:'🥗 Aderezo',hotcake:'🥞 Hotcake',avena:'🥣 Avena',pan:'🍞 Pan',postre:'🍮 Postre',sopa:'🍲 Sopa',arroz:'🍚 Arroz',pasta:'🍝 Pasta',pollococido:'🍗 Pollo cocido'})[type]||('🍽️ '+(type?type.charAt(0).toUpperCase()+type.slice(1):'Receta'));
+  return ({desayuno:'🌅 Desayuno',comida:'🍽️ Comida',huevo:'🥚 Huevo',cena:'🌙 Cena',licuado:'🥤 Licuado',snack:'🍿 Snack / merienda',fruta:'🍓 Fruta',agua:'💧 Agua fresca',bebida:'☕ Bebida',suero:'💧 Suero',especia:'🧂 Sazonador',salsa:'🌶️ Salsa',aderezo:'🥗 Aderezo',hotcake:'🥞 Hotcake',avena:'🥣 Avena',pan:'🍞 Pan',postre:'🍮 Postre',sopa:'🍲 Sopa',arroz:'🍚 Arroz',pasta:'🍝 Pasta',pollococido:'🍗 Pollo cocido'})[type]||('🍽️ '+(type?type.charAt(0).toUpperCase()+type.slice(1):'Receta'));
 }
 function typeBadge(type){
   return `<span style="display:inline-block;background:#eaf5ef;color:#15704f;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800;margin-bottom:5px">${mealTypeLabel(type)}</span><br>`;
@@ -8400,8 +8445,8 @@ function renderRecipes(){
     if(grouped){
       // Agrupar por categoría en secciones colapsables.
       // Render PEREZOSO: cada categoría dibuja sus tarjetas solo al abrir su <details> (evita dibujar cientos de recetas de golpe).
-      var catNames={desayuno:'🍳 Desayunos',comida:'🍲 Comidas',cena:'🌙 Cenas',sopa:'🍲 Sopas',arroz:'🍚 Arroces',pasta:'🍝 Espaguetis y pastas',pollococido:'🍗 Pollo cocido',licuado:'🥤 Licuados',bebida:'🧊 Bebidas',agua:'🧊 Aguas frescas',snack:'🥜 Snacks',postre:'🍮 Postres',cafe:'☕ Cafés',salsa:'🌶️ Salsas',aderezo:'🥗 Aderezos',fruta:'🍓 Frutas',hotcake:'🥞 Hotcakes',avena:'🥣 Avenas',pan:'🍞 Panes',thermomix:'🤖 Thermomix',horno:'🫕 Al horno'};
-      var order=['desayuno','comida','cena','sopa','arroz','pasta','pollococido','licuado','snack','postre','bebida','agua','cafe','avena','hotcake','pan','fruta','salsa','aderezo'];
+      var catNames={desayuno:'🍳 Desayunos',comida:'🍲 Comidas',huevo:'🥚 Huevos',cena:'🌙 Cenas',sopa:'🍲 Sopas',arroz:'🍚 Arroces',pasta:'🍝 Espaguetis y pastas',pollococido:'🍗 Pollo cocido',licuado:'🥤 Licuados',bebida:'🧊 Bebidas',agua:'🧊 Aguas frescas',suero:'💧 Sueros',snack:'🥜 Snacks',postre:'🍮 Postres',cafe:'☕ Cafés',salsa:'🌶️ Salsas',aderezo:'🥗 Aderezos',especia:'🧂 Sazonadores',fruta:'🍓 Frutas',hotcake:'🥞 Hotcakes',avena:'🥣 Avenas',pan:'🍞 Panes',thermomix:'🤖 Thermomix',horno:'🫕 Al horno'};
+      var order=['desayuno','comida','huevo','cena','sopa','arroz','pasta','pollococido','licuado','snack','postre','bebida','agua','suero','cafe','avena','hotcake','pan','fruta','salsa','aderezo','especia'];
       var byCat={};
       arr.forEach(function(r){ (byCat[r.type]=byCat[r.type]||[]).push(r); });
       window._recGrouped=byCat;
@@ -11590,7 +11635,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.16.0';
+    window.HM_APP_VERSION='46.17.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

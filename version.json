@@ -1,8 +1,18 @@
 {
-  "latest": "46.16.0",
+  "latest": "46.17.0",
   "date": "2026-07-12",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.17.0",
+      "date": "2026-07-12",
+      "type": "recomendada",
+      "nuevas": [
+        "20 recetas nuevas: categoria 'Huevos' (huevos en salsa roja, verde, chipotle, estilo bufalo, rancheros y con especias), bebidas combinadas (mango-coco, piña-coco, sandia-menta y mas), 4 sueros para el calor y 4 sazonadores de especias"
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "46.16.0",
       "date": "2026-07-12",
