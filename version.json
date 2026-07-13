@@ -1,8 +1,18 @@
 {
-  "latest": "46.8.0",
+  "latest": "46.8.1",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.8.1",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Seccion de Suplementos en Recetas: proteina whey, creatina, ganador de peso, multivitaminico, vitamina D y omega-3, con dosis, marcas y buscar en Amazon"
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "46.8.0",
       "date": "2026-07-11",

@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.8.0';
+  window.HM_APP_VERSION='46.8.1';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -447,7 +447,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       </div>
     </div>
     <div class="appStatusBox">
-      <span class="versionChip">v46.8.0</span>
+      <span class="versionChip">v46.8.1</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -2543,6 +2543,39 @@ function recChipsHTML(){
 function refreshRecetasTab(){let i=tabs.indexOf('🍽️ Recetas');if(i>=0){buildTabIfNeeded(i,true);try{bindAll()}catch(e){}}}
 function recSetTab(t){window._recTab=t;window._recChip='';_recipePage=1;refreshRecetasTab();}
 function recSetChip(v){window._recChip=(window._recChip===v?'':v);_recipePage=1;refreshRecetasTab();}
+// Suplementos (whey, creatina, vitaminas) que se consiguen en Amazon. Info general, no consejo médico.
+const SUPPLEMENTS=[
+  {e:'🥛',name:'Proteína whey',para:'Completar tu proteína para músculo (post-entreno o entre comidas).',dosis:'1 scoop (~30 g) ≈ 24 g proteína · ~120 kcal',marcas:'Optimum Gold Standard, Dymatize ISO100, MuscleTech, Nutricost',kcal:120,prot:24,carb:3,buscar:'whey protein'},
+  {e:'⚡',name:'Creatina monohidratada',para:'Más fuerza y volumen. De los suplementos más estudiados y seguros.',dosis:'3–5 g al día, a cualquier hora, con agua o licuado',marcas:'Optimum, Nutricost, Thorne, Creapure',kcal:0,prot:0,carb:0,buscar:'creatina monohidratada'},
+  {e:'🌿',name:'Ganador de peso (mass gainer)',para:'Subir calorías fácil si te cuesta comer suficiente (tu meta).',dosis:'Según etiqueta · o casero: leche + avena + plátano + crema de cacahuate',marcas:'Optimum Serious Mass, MuscleTech Mass-Tech',kcal:1200,prot:50,carb:220,buscar:'mass gainer'},
+  {e:'💊',name:'Multivitamínico',para:'Cubrir vitaminas y minerales si tu dieta no es muy variada.',dosis:'1 al día con comida',marcas:'Centrum, One A Day, Nature Made',kcal:0,prot:0,carb:0,buscar:'multivitaminico'},
+  {e:'☀️',name:'Vitamina D3',para:'Hueso, energía y ánimo (útil si te da poco el sol).',dosis:'1000–2000 UI al día con comida',marcas:'Nature Made, NOW, Sports Research',kcal:0,prot:0,carb:0,buscar:'vitamina d3'},
+  {e:'🐟',name:'Omega-3 (aceite de pescado)',para:'Corazón, articulaciones y recuperación.',dosis:'1–2 g de EPA+DHA al día',marcas:'Nordic Naturals, Nature Made, Sports Research',kcal:10,prot:0,carb:0,buscar:'omega 3 fish oil'}
+];
+function supplementSearchLink(q){return 'https://www.amazon.com/s?k='+encodeURIComponent(q);}
+function suplementosHTML(){
+  return '<details class="rct-adv" style="margin:6px 0"><summary>💊 Suplementos (whey, creatina, vitaminas)</summary><div class="rct-adv-body">'
+    +'<p class="muted" style="margin:0 0 8px;font-size:12px">Info general para orientarte (no es consejo médico). Toca "Buscar en Amazon" para ver marcas y precios. Si tomas medicamentos o tienes alguna condición, consulta antes.</p>'
+    +'<div class="grid">'+SUPPLEMENTS.map(function(s,i){
+      var macro=[s.kcal?s.kcal+' kcal':'',s.prot?('P '+s.prot+'g'):''].filter(Boolean).join(' · ');
+      return '<div class="mini"><b>'+s.e+' '+safeText(s.name)+'</b>'+(macro?' <span class="muted" style="font-size:12px">('+macro+' por porción)</span>':'')
+        +'<div style="font-size:13px;margin:4px 0">'+safeText(s.para)+'</div>'
+        +'<div class="muted" style="font-size:12px"><b>Dosis:</b> '+safeText(s.dosis)+'</div>'
+        +'<div class="muted" style="font-size:12px"><b>Marcas comunes:</b> '+safeText(s.marcas)+'</div>'
+        +'<div class="row" style="gap:6px;margin-top:8px"><a class="btn primary" style="text-decoration:none" target="_blank" rel="noopener" href="'+supplementSearchLink(s.buscar)+'">🔎 Buscar en Amazon</a>'+(s.prot?'<button class="btn" onclick="logSupplement('+i+')">✅ Comí esto</button>':'')+'</div>'
+        +'<div id="supOut_'+i+'"></div></div>';
+    }).join('')+'</div></div></details>';
+}
+function logSupplement(i){
+  var s=SUPPLEMENTS[i]; if(!s)return;
+  var today=new Date().toISOString().slice(0,10);
+  if(!state.diary)state.diary={};
+  if(!state.diary[today])state.diary[today]={breakfast:[],lunch:[],dinner:[],snacks:[]};
+  state.diary[today].snacks.push({name:s.name,kcal:+s.kcal||0,prot:+s.prot||0,carb:+s.carb||0,fat:0});
+  save();
+  var out=document.getElementById('supOut_'+i);
+  if(out)out.innerHTML='<div class="ok" style="margin-top:6px;font-size:12px;padding:5px 8px">✅ Sumado al contador de hoy'+(s.prot?(' · '+s.prot+'g proteína'):'')+'</div>';
+}
 function secRecetas(){
   let _tab=window._recTab||'todas';
   let _favN=(state.recipeFavorites&&state.recipeFavorites.length)?' ('+state.recipeFavorites.length+')':'';
@@ -2556,6 +2589,7 @@ function secRecetas(){
   <div class="r2-tabs">${[['todas','Todas'],['tipo','Tipo'],['costo','Costo'],['tiempo','Tiempo'],['objetivo','Objetivo']].map(x=>`<button class="r2-tab${_tab===x[0]?' on':''}" onclick="recSetTab('${x[0]}')">${x[1]}</button>`).join('')}</div>
   <div class="r2-chips" id="recChips">${recChipsHTML()}</div>
   <div class="r2-favrow"><span class="r2-count" id="recMethodLabel"></span><button class="r2-fav${window._portableFormat==='favoritas'?' on':''}" onclick="toggleFavoritesFilter()">⭐ Favoritas${_favN}</button></div>
+  ${suplementosHTML()}
   <div id="recipes"></div>
 </div>
 
@@ -11299,7 +11333,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.8.0';
+    window.HM_APP_VERSION='46.8.1';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
