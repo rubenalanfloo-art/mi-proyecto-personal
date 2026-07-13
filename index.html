@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.11.0';
+  window.HM_APP_VERSION='46.12.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -7642,13 +7642,63 @@ async function loginScreenSubmit(mode){
     }
   }catch(e){setSt((e&&e.message)||'No se pudo. Revisa correo y contraseña.',false);}
 }
+// ===== Fotos en el bucket privado (personal-media) =====
+// Antes las fotos de progreso vivían como base64 DENTRO del estado: llenaban localStorage e inflaban
+// el respaldo que se sube a la nube. Ahora se suben al bucket y en el estado queda solo la ruta (cloudPath).
+var _mediaBlobCache={};
+// Descarga (autenticada) una foto del bucket privado y devuelve una URL local para mostrarla. Cachea por ruta.
+async function resolveCloudMedia(cloudPath){
+  if(!cloudPath)return '';
+  if(_mediaBlobCache[cloudPath])return _mediaBlobCache[cloudPath];
+  var c=getCloudConfig(),s=getCloudSession();
+  if(!c.url||!c.key||!s||!s.access_token||!navigator.onLine)return '';
+  try{
+    var r=await fetch(c.url+'/storage/v1/object/personal-media/'+cloudPath,{headers:{apikey:c.key,Authorization:'Bearer '+s.access_token}});
+    if(!r.ok)return '';
+    var b=await r.blob();var u=URL.createObjectURL(b);_mediaBlobCache[cloudPath]=u;return u;
+  }catch(e){return '';}
+}
+// Etiqueta <img> para una foto: usa el base64 si aún lo tiene, o marca data-cloud para rellenar después.
+function photoImgTag(photo,style,alt){
+  var direct=photo.img||'';
+  var cloud=(!direct&&photo.cloudPath)?photo.cloudPath:'';
+  return '<img '+(direct?'src="'+direct+'"':'')+(cloud?' data-cloud="'+safeText(cloud)+'" loading="lazy"':'')+' alt="'+safeText(alt||'')+'" style="'+style+'">';
+}
+// Rellena las <img data-cloud> que quedaron sin src (fotos que ya solo viven en la nube).
+function hydrateCloudImages(root){
+  var scope=root||document; if(!scope.querySelectorAll)return;
+  Array.prototype.forEach.call(scope.querySelectorAll('img[data-cloud]'),function(img){
+    if(img._hydrating||img.getAttribute('src'))return;
+    var p=img.getAttribute('data-cloud');if(!p)return;
+    img._hydrating=true;
+    resolveCloudMedia(p).then(function(u){img._hydrating=false;if(u)img.src=u;else img.alt='(foto en la nube · inicia sesión para verla)';});
+  });
+}
 async function cloudUploadProgressPhoto(photo){
   let c=getCloudConfig(),s=getCloudSession();if(!c.url||!c.key||!s?.access_token||!navigator.onLine)return;
-  try{let blob=await fetch(photo.img).then(r=>r.blob()),path=`${s.user.id}/progress/${photo.id}.jpg`;
+  if(photo.cloudPath&&!photo.img)return; // ya está en la nube y sin copia local pesada
+  try{
+    let src=photo.img||(photo.cloudPath?await resolveCloudMedia(photo.cloudPath):'');
+    if(!src)return;
+    let blob=await fetch(src).then(r=>r.blob());
+    let path=photo.cloudPath||`${s.user.id}/progress/${photo.id}.jpg`;
     let r=await fetch(`${c.url}/storage/v1/object/personal-media/${path}`,{method:'POST',headers:{apikey:c.key,Authorization:'Bearer '+s.access_token,'Content-Type':'image/jpeg','x-upsert':'true'},body:blob});
-    if(!r.ok)throw Error(await r.text());photo.cloudPath=path;safeStorage.set('pp_full',JSON.stringify(state));updateSyncBadge('Foto en nube','#d9f5e7');
+    if(!r.ok)throw Error(await r.text());
+    photo.cloudPath=path;
+    // Cachea el blob para mostrarlo sin re-descargar y QUITA el base64 del estado (libera espacio).
+    if(photo.img){try{_mediaBlobCache[path]=URL.createObjectURL(blob);}catch(e){} delete photo.img;}
+    safeStorage.set('pp_full',JSON.stringify(state));try{persistStateIDB(JSON.stringify(state));}catch(e){}
+    updateSyncBadge('Foto en nube','#d9f5e7');
+    try{renderProgressPhotos();}catch(e){}
   }catch(e){console.warn('Foto pendiente de nube',e)}
 }
+// Migra fotos viejas que aún tienen base64: las sube al bucket y les quita el base64. Se ejecuta tras cargar.
+async function migrateProgressPhotosToCloud(){
+  if(!getCloudSession()||!navigator.onLine)return;
+  var pend=(state.progressPhotos||[]).filter(function(p){return p&&p.img;});
+  for(var i=0;i<pend.length;i++){try{await cloudUploadProgressPhoto(pend[i]);}catch(e){}}
+}
+window.addEventListener('load',function(){setTimeout(migrateProgressPhotosToCloud,3000);});
 window.addEventListener('online',()=>{if(!getCloudSession()){setSync('nosession');return}setSync('pending',String(state.offlineChanges||0));cloudStartupSync();});
 window.addEventListener('offline',()=>setSync('offline',String(state.offlineChanges||0)));
 window.addEventListener('load',()=>setTimeout(cloudStartupSync,1200));
@@ -7690,17 +7740,19 @@ function compareProgressPhotos(){
   if(!a||!b){if(out)out.innerHTML='<div class="warn">Selecciona dos fotos.</div>';return}
   let change=(b.weight||0)-(a.weight||0);
   out.innerHTML=`<div class="card"><h3>Comparación</h3><div class="grid" style="grid-template-columns:1fr 1fr">
-    <div><b>Antes · ${safeText(a.date)}</b><img src="${a.img}" alt="Antes" style="width:100%;max-height:480px;object-fit:contain;border-radius:10px"><div class="muted">${a.weight||'—'} lb · ${safeText(a.view)}</div></div>
-    <div><b>Después · ${safeText(b.date)}</b><img src="${b.img}" alt="Después" style="width:100%;max-height:480px;object-fit:contain;border-radius:10px"><div class="muted">${b.weight||'—'} lb · ${safeText(b.view)}</div></div>
+    <div><b>Antes · ${safeText(a.date)}</b>${photoImgTag(a,'width:100%;max-height:480px;object-fit:contain;border-radius:10px','Antes')}<div class="muted">${a.weight||'—'} lb · ${safeText(a.view)}</div></div>
+    <div><b>Después · ${safeText(b.date)}</b>${photoImgTag(b,'width:100%;max-height:480px;object-fit:contain;border-radius:10px','Después')}<div class="muted">${b.weight||'—'} lb · ${safeText(b.view)}</div></div>
   </div>${a.weight&&b.weight?`<div class="ok" style="margin-top:8px">Cambio de peso: ${change>=0?'+':''}${change.toFixed(1)} lb</div>`:''}</div>`;
+  hydrateCloudImages(out);
 }
 function renderProgressPhotos(){
   let gallery=document.getElementById('progressPhotoGallery');if(!gallery)return;
   let photos=state.progressPhotos||[],options=photos.map(x=>`<option value="${x.id}">${x.date} · ${safeText(x.view)} · ${x.weight||'—'} lb</option>`).join('');
   gallery.innerHTML=photos.length?`<div class="card"><h3>Comparar antes y después</h3><div class="grid"><select id="compareBefore">${options}</select><select id="compareAfter">${options}</select></div><button class="btn primary" style="width:100%;margin-top:8px" onclick="compareProgressPhotos()">Comparar fotos</button></div>
-    <div class="grid">${photos.map(x=>`<div class="card" style="margin:0"><img src="${x.img}" alt="Progreso ${safeText(x.view)}" style="width:100%;height:220px;object-fit:cover;border-radius:10px"><b>${safeText(x.date)} · ${safeText(x.view)}</b><div class="muted">${x.weight||'—'} lb · ${safeText(x.note)}</div><button class="btn icon-btn" title="Eliminar" onclick="deleteProgressPhoto(${x.id})">🗑</button></div>`).join('')}</div>
-    <div class="warn" style="margin-top:10px"><b>Privacidad:</b> las fotos se guardan únicamente en este navegador. Exporta el respaldo y protege el acceso a tu dispositivo.</div>`
+    <div class="grid">${photos.map(x=>`<div class="card" style="margin:0">${photoImgTag(x,'width:100%;height:220px;object-fit:cover;border-radius:10px','Progreso '+safeText(x.view))}<b>${safeText(x.date)} · ${safeText(x.view)}</b><div class="muted">${x.weight||'—'} lb · ${safeText(x.note)}</div><button class="btn icon-btn" title="Eliminar" onclick="deleteProgressPhoto(${x.id})">🗑</button></div>`).join('')}</div>
+    <div class="warn" style="margin-top:10px"><b>Privacidad:</b> tus fotos se guardan en tu almacenamiento privado de la nube (solo tú las ves con tu sesión) y en este dispositivo. Si no has iniciado sesión, quedan solo aquí.</div>`
     :'<div class="mini">Todavía no tienes fotos guardadas.</div>';
+  hydrateCloudImages(gallery);
 }
 
 
@@ -11461,7 +11513,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.11.0';
+    window.HM_APP_VERSION='46.12.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
