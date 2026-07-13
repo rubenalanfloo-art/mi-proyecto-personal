@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.12.0';
+  window.HM_APP_VERSION='46.13.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -7089,17 +7089,20 @@ function setProfilePhoto(input){
       var max=256,sc=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');
       c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
       c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-      state.profile=state.profile||{}; state.profile.photo=c.toDataURL('image/jpeg',0.8); state.profile.avatar='';
+      state.profile=state.profile||{}; state.profile.photo=c.toDataURL('image/jpeg',0.8); state.profile.avatar=''; state.profile.photoPath='';
       save(); quickSaved(); try{render()}catch(e){} try{showGroup('ajustes',false)}catch(e){}
+      try{cloudUploadProfilePhoto();}catch(e){}
     };
     img.src=e.target.result;
   };
   rd.readAsDataURL(f);
 }
-function setAvatar(emo){ state.profile=state.profile||{}; state.profile.avatar=emo; state.profile.photo=''; save(); quickSaved(); try{render()}catch(e){} try{showGroup('ajustes',false)}catch(e){} }
+function setAvatar(emo){ state.profile=state.profile||{}; state.profile.avatar=emo; state.profile.photo=''; state.profile.photoPath=''; save(); quickSaved(); try{render()}catch(e){} try{showGroup('ajustes',false)}catch(e){} }
 function profileAvatarHTML(size){
   size=size||64; var p=state.profile||{};
-  if(p.photo)return '<img src="'+p.photo+'" alt="foto" style="width:'+size+'px;height:'+size+'px;border-radius:50%;object-fit:cover;border:2px solid var(--g)">';
+  var st='width:'+size+'px;height:'+size+'px;border-radius:50%;object-fit:cover;border:2px solid var(--g)';
+  if(p.photo)return '<img src="'+p.photo+'" alt="foto" style="'+st+'">';
+  if(p.photoPath)return '<img data-cloud="'+safeText(p.photoPath)+'" loading="lazy" alt="foto" style="'+st+'">';
   var emo=p.avatar||'🌺';
   return '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:var(--g2);display:grid;place-items:center;font-size:'+Math.round(size*0.5)+'px;border:2px solid var(--g)">'+emo+'</div>';
 }
@@ -7692,11 +7695,28 @@ async function cloudUploadProgressPhoto(photo){
     try{renderProgressPhotos();}catch(e){}
   }catch(e){console.warn('Foto pendiente de nube',e)}
 }
+// Sube la foto de PERFIL al bucket y quita el base64 del estado (mismo patrón que las de progreso).
+async function cloudUploadProfilePhoto(){
+  let c=getCloudConfig(),s=getCloudSession();if(!c.url||!c.key||!s?.access_token||!navigator.onLine)return;
+  var p=state.profile||{}; if(!p.photo)return;
+  try{
+    let blob=await fetch(p.photo).then(r=>r.blob());
+    let path=`${s.user.id}/profile/avatar.jpg`;
+    let r=await fetch(`${c.url}/storage/v1/object/personal-media/${path}`,{method:'POST',headers:{apikey:c.key,Authorization:'Bearer '+s.access_token,'Content-Type':'image/jpeg','x-upsert':'true'},body:blob});
+    if(!r.ok)throw Error(await r.text());
+    p.photoPath=path;
+    try{_mediaBlobCache[path]=URL.createObjectURL(blob);}catch(e){}
+    delete p.photo;
+    safeStorage.set('pp_full',JSON.stringify(state));try{persistStateIDB(JSON.stringify(state));}catch(e){}
+    try{render()}catch(e){}
+  }catch(e){console.warn('Foto de perfil pendiente de nube',e)}
+}
 // Migra fotos viejas que aún tienen base64: las sube al bucket y les quita el base64. Se ejecuta tras cargar.
 async function migrateProgressPhotosToCloud(){
   if(!getCloudSession()||!navigator.onLine)return;
   var pend=(state.progressPhotos||[]).filter(function(p){return p&&p.img;});
   for(var i=0;i<pend.length;i++){try{await cloudUploadProgressPhoto(pend[i]);}catch(e){}}
+  try{if(state.profile&&state.profile.photo)await cloudUploadProfilePhoto();}catch(e){}
 }
 window.addEventListener('load',function(){setTimeout(migrateProgressPhotosToCloud,3000);});
 window.addEventListener('online',()=>{if(!getCloudSession()){setSync('nosession');return}setSync('pending',String(state.offlineChanges||0));cloudStartupSync();});
@@ -7811,7 +7831,7 @@ function ownMauiPantry(i){
   let out=document.getElementById('fridgeOut');if(out)out.innerHTML='<div class="ok"><b>Agregado a tu nevera:</b> '+safeText(x.name)+'. Ahora puedes tocar Crear comida o Lista de compra.</div>';
 }
 
-function bindAll(){try{renderMyProducts()}catch(e){}try{renderSavedRoutines()}catch(e){}try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);}
+function bindAll(){try{renderMyProducts()}catch(e){}try{renderSavedRoutines()}catch(e){}try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);try{hydrateCloudImages(document)}catch(e){}}
 function convertWorkoutWeight(source){
   let lb=document.getElementById('workoutLb'),kg=document.getElementById('workoutKg'),out=document.getElementById('workoutWeightOut');
   if(!lb||!kg||!out)return;
@@ -11513,7 +11533,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.12.0';
+    window.HM_APP_VERSION='46.13.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
