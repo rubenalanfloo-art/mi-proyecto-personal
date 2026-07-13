@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.13.0';
+  window.HM_APP_VERSION='46.14.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -6041,13 +6041,7 @@ function analyzeFullConversation(){
   renderDatingHistory();
 }
 
-function renderDatingHistory(){
-  let el=document.getElementById('datingHistory');if(!el)return;
-  let history=state.dating.history||[];
-  el.innerHTML=`<div class="card"><div class="row"><h3 style="flex:1">Historial (${history.length})</h3>${history.length?'<button class="btn" onclick="clearDatingHistory()">Borrar historial</button>':''}</div>
-    ${history.length?history.slice(0,6).map(x=>`<div class="item"><b>${safeText(x.level)} · ${x.score}/100</b><div class="muted">${safeText(x.date)} · ${safeText(x.reason)}</div></div>`).join(''):'<p class="muted">Todavía no hay análisis guardados.</p>'}</div>`;
-}
-function clearDatingHistory(){if(confirm('¿Borrar todo el historial de conversaciones?')){state.dating.history=[];save();renderDatingHistory()}}
+// (renderDatingHistory y clearDatingHistory se definen más abajo (~línea 6790, versión vigente con "person" y "next"); aquí había una copia duplicada muerta que se quitó.)
 
 function loadDatingProfile(){
   let p=state.dating.profile||{};
@@ -6889,6 +6883,17 @@ async function renderSystemHealth(){
   }catch(error){}
   let usage='No disponible';
   if(navigator.storage?.estimate)try{let estimate=await navigator.storage.estimate();usage=((estimate.usage||0)/1048576).toFixed(1)+' MB de '+((estimate.quota||0)/1048576).toFixed(0)+' MB'}catch(error){}
+  // Uso REAL del guardado del navegador (localStorage, ~5MB): es el que dispara el aviso de "poco espacio".
+  let lsBytes=0;try{for(let i=0;i<localStorage.length;i++){let k=localStorage.key(i)||'';lsBytes+=(localStorage.getItem(k)||'').length+k.length;}}catch(e){}
+  let lsPct=Math.min(100,Math.round(lsBytes/(5*1024*1024)*100));
+  let lsKB=(lsBytes/1024).toFixed(0);
+  let barColor=lsPct>=90?'#dc2626':lsPct>=70?'#d97706':'#15704f';
+  let barMsg=lsPct>=90?'⚠️ Casi lleno. Descarga un respaldo y sincroniza a la nube.':lsPct>=70?'Vas algo lleno. Sincroniza a la nube cuando puedas.':'Hay espacio de sobra.';
+  let barHTML=`<div class="mini" style="margin-top:10px"><b>📦 Espacio usado en este dispositivo</b>
+    <div style="height:14px;background:#e6efe9;border-radius:999px;overflow:hidden;margin:8px 0"><div style="height:100%;width:${lsPct}%;background:${barColor};transition:width .4s"></div></div>
+    <div class="muted" style="font-size:12px"><b>${lsKB} KB</b> de ~5,120 KB (${lsPct}%). ${barMsg}</div>
+    <div class="muted" style="font-size:11px;margin-top:4px">Tus fotos ya no ocupan aquí: van a tu nube privada. Total del navegador (con caché): ${usage}.</div>
+  </div>`;
   let hosted=location.protocol==='https:'||location.hostname==='localhost';
   let sw=!!navigator.serviceWorker?.controller;
   let cloud=!!getCloudSession();
@@ -6900,6 +6905,7 @@ async function renderSystemHealth(){
     <div class="mini"><b>Nube</b><div style="font-weight:900;margin-top:6px">${cloud?'Sesión conectada':'No configurada'}</div><span class="trust-badge ${cloud?'trust-real':'trust-est'}">${cloud?'ACTIVA':'OPCIONAL'}</span></div>
     <div class="mini"><b>Almacenamiento</b><div style="font-weight:900;margin-top:6px">${usage}</div><span class="trust-badge trust-local">${backupCount} respaldos internos</span></div>
   </div>
+  ${barHTML}
   <div class="${hosted?'ok':'warn'}" style="margin-top:10px"><b>Última modificación:</b> ${safeText(state.lastModified||'Todavía no registrada')}. ${hosted?'Esta es la dirección adecuada para usar la app.':'Abre la URL de Netlify antes de introducir datos importantes.'}</div>`;
   renderVersionBackups();
 }
@@ -11533,7 +11539,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.13.0';
+    window.HM_APP_VERSION='46.14.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
