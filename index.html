@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.20.0';
+  window.HM_APP_VERSION='46.21.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -2944,6 +2944,39 @@ function hornoHTML(){
     +'<div id="hornoOut" style="margin-top:10px"></div>'
     +'</div></details>';
 }
+// ===== Thermomix TM5: funciones y trucos (moler, pulverizar, picar, batir, amasar) =====
+const TM5_FUNCS=[
+ {c:'Moler / pulverizar',n:'Harina de avena',s:'10 seg · vel 10',tip:'Avena seca → harina para hotcakes o pan.'},
+ {c:'Moler / pulverizar',n:'Harina de arroz o maíz',s:'1 min · vel 10',tip:'Grano crudo → harina fina.'},
+ {c:'Moler / pulverizar',n:'Azúcar glass',s:'10 seg · vel 10',tip:'Azúcar normal → glass para postres.'},
+ {c:'Moler / pulverizar',n:'Especias secas',s:'1 min · vel 10',tip:'Comino, pimienta, canela o clavo en grano.'},
+ {c:'Moler / pulverizar',n:'Polvo de chile seco',s:'1 min · vel 10',tip:'Chiles secos → chile en polvo casero.'},
+ {c:'Moler / pulverizar',n:'Café en grano',s:'1 min · vel 10',tip:'Menos tiempo = molido más grueso.'},
+ {c:'Moler / pulverizar',n:'Pan molido',s:'10 seg · vel 8',tip:'Pan seco → para empanizar.'},
+ {c:'Moler / pulverizar',n:'Harina de nuez/almendra',s:'8-10 seg · vel 8',tip:'No te pases o se hace mantequilla.'},
+ {c:'Picar / triturar',n:'Picar cebolla o ajo',s:'3-5 seg · vel 5',tip:'En trozos; no lo dejes de más.'},
+ {c:'Picar / triturar',n:'Picar verduras',s:'5 seg · vel 5',tip:'Para sofrito o picadillo.'},
+ {c:'Picar / triturar',n:'Rallar queso duro',s:'10 seg · vel 8',tip:'Queso frío y en trozos.'},
+ {c:'Picar / triturar',n:'Triturar hielo',s:'5-8 seg · vel 6 (giro)',tip:'Para raspados o bebidas frías.'},
+ {c:'Picar / triturar',n:'Moler jitomate (salsa)',s:'20 seg · vel 6',tip:'Salsa cruda o para freír después.'},
+ {c:'Batir / amasar',n:'Puré o licuar sopa',s:'1 min · vel 5→10',tip:'Sube la velocidad poco a poco.'},
+ {c:'Batir / amasar',n:'Batir crema o claras',s:'Mariposa · vel 3-4',tip:'Vigila; no te pases con la crema.'},
+ {c:'Batir / amasar',n:'Amasar pan o masa',s:'2 min · modo espiga 🌾',tip:'Para pan, pizza o masa.'},
+ {c:'Batir / amasar',n:'Mantequilla de cacahuate',s:'2-3 min · vel 6-8',tip:'Baja con la espátula entre tandas.'},
+ {c:'Otras',n:'Pesar ingredientes',s:'Función báscula (Tara)',tip:'Pesa directo en el vaso; usa Tara por ingrediente.'},
+ {c:'Otras',n:'Masa de maíz (nixtamal)',s:'1 min · vel 10 (en tandas)',tip:'Agrega agua poco a poco.'},
+ {c:'Otras',n:'Piloncillo en polvo',s:'20 seg · vel 10',tip:'Piloncillo troceado → polvo.'}
+];
+function thermomixFuncHTML(){
+  var cats=['Moler / pulverizar','Picar / triturar','Batir / amasar','Otras'];
+  var body=cats.map(function(c){
+    var items=TM5_FUNCS.filter(function(f){return f.c===c;});
+    return '<div style="margin-top:8px"><b style="font-size:13px">'+safeText(c)+'</b><div class="grid" style="margin-top:4px">'+items.map(function(f){
+      return '<div class="mini"><b>'+safeText(f.n)+'</b><div style="font-size:13px;margin-top:2px">🤖 <b>'+safeText(f.s)+'</b></div>'+(f.tip?'<div class="muted" style="font-size:12px;margin-top:2px">💡 '+safeText(f.tip)+'</div>':'')+'</div>';
+    }).join('')+'</div></div>';
+  }).join('');
+  return '<details><summary>🤖 Thermomix TM5 — funciones y trucos (moler, especias, avena...)</summary><div class="card"><p class="muted" style="margin-top:0">Saca más provecho de tu TM5: moler, pulverizar, picar, batir y amasar. Ajustes aproximados; ajústalos al gusto.</p>'+body+'</div></details>';
+}
 function secRecetas(){
   let _tab=window._recTab||'todas';
   let _favN=(state.recipeFavorites&&state.recipeFavorites.length)?' ('+state.recipeFavorites.length+')':'';
@@ -2988,6 +3021,7 @@ ${visualGuide('recetas')}
 <div style="padding-top:8px">
 ${verdurasCocidasHTML()}
 ${hornoHTML()}
+${thermomixFuncHTML()}
 <details>
 <summary>🧩 Constructor de comida portátil</summary>
   <div class="card">
@@ -8455,6 +8489,17 @@ function detectStepSeconds(text){
   if(min) return parseInt(min[1])*60;
   return 0;
 }
+// Agrega el tiempo aproximado a los pasos de "precalienta/calienta" que no lo dicen (horno, sartén, tostador).
+function annotateStep(text){
+  var t=String(text||'').toLowerCase();
+  if(/(precalienta|precalentar|calienta|calentar)/.test(t) && !/\d+\s*(?:minutos?|min\b|segundos?|seg\b)/.test(t)){
+    if(/horno/.test(t)) return text+' <span class="muted">(tarda ~10-15 min en calentar)</span>';
+    if(/sart[eé]n|comal|parrilla|plancha|budare/.test(t)) return text+' <span class="muted">(~2-3 min a fuego medio)</span>';
+    if(/toaster|tostador/.test(t)) return text+' <span class="muted">(~3-5 min)</span>';
+    return text+' <span class="muted">(~2-3 min)</span>';
+  }
+  return text;
+}
 function toggleRecipeStep(recIdx,stepIdx){
   if(!state.recipeStepProgress)state.recipeStepProgress={};
   var key=recIdx+'';
@@ -8664,7 +8709,7 @@ function renderRecipes(){
             var timer=secs>0?'<span class="step-timer" onclick="event.stopPropagation();openAppTimer(\''+r.name.replace(/'/g,"\\'").replace(/"/g,'')+' - paso '+(i+1)+'\','+secs+')">⏱️ '+(secs>=60?Math.round(secs/60)+' min':secs+'s')+'</span>':'';
             var sp=(state.recipeStepProgress&&state.recipeStepProgress[baseRecipes.indexOf(r)+'']&&state.recipeStepProgress[baseRecipes.indexOf(r)+''].date===todayISO())?state.recipeStepProgress[baseRecipes.indexOf(r)+''].done:{};
             var isDone=!!sp[i];
-            return '<div class="step '+(isDone?'done':'')+'" onclick="toggleRecipeStep('+baseRecipes.indexOf(r)+','+i+')"><div class="step-check">'+(isDone?'✓':'')+'</div><div class="step-text"><span class="step-num">Paso '+(i+1)+':</span> '+x+'</div>'+timer+'</div>';
+            return '<div class="step '+(isDone?'done':'')+'" onclick="toggleRecipeStep('+baseRecipes.indexOf(r)+','+i+')"><div class="step-check">'+(isDone?'✓':'')+'</div><div class="step-text"><span class="step-num">Paso '+(i+1)+':</span> '+annotateStep(x)+'</div>'+timer+'</div>';
           }).join('')}</div>
         </div>
 
@@ -8750,7 +8795,7 @@ function selectRecipeMethod(idx,key){
   }else{
     if(nativeBlock)nativeBlock.style.display='none';
     if(altBlock)altBlock.innerHTML='<div style="font-weight:900;font-size:13px;margin:6px 0">'+sel.icon+' Preparación en '+safeText(sel.label)+(sel.temp?' · '+safeText(sel.temp):'')+'</div>'+
-      sel.steps.map((x,i)=>'<label class="step" style="cursor:pointer"><input type="checkbox" style="margin-right:8px" onclick="this.closest(\'.step\').classList.toggle(\'done\',this.checked)"><span class="step-text"><span class="step-num">Paso '+(i+1)+':</span> '+safeText(x)+'</span></label>').join('');
+      sel.steps.map((x,i)=>'<label class="step" style="cursor:pointer"><input type="checkbox" style="margin-right:8px" onclick="this.closest(\'.step\').classList.toggle(\'done\',this.checked)"><span class="step-text"><span class="step-num">Paso '+(i+1)+':</span> '+annotateStep(safeText(x))+'</span></label>').join('');
   }
 }
 // ===== v45 Fase D: registro inicial (onboarding) + perfil ampliado =====
@@ -8910,14 +8955,31 @@ function rateRecipe(key,value){if(value){state.recipeRatings[key]=+value;save()}
 function showRecipeSubstitutions(key){
   let recipe=baseRecipes[key],el=document.getElementById('recipeSubs_'+key);if(!recipe||!el)return;
   let t=(recipe.ingredients||'').toLowerCase(),subs=[];
-  if(/pollo|carne|pavo|jamón|cerdo/.test(t))subs.push('Proteína: cambia por atún, huevo, frijoles o lentejas.');
-  if(/atún|sardina|salmón|tilapia/.test(t))subs.push('Pescado: cambia por pollo, huevo o garbanzos.');
-  if(/queso|crema|leche|yogurt/.test(t))subs.push('Lácteos: usa versión sin lactosa o aguacate para añadir cremosidad.');
-  if(/pan|bolillo/.test(t))subs.push('Pan: cambia por tortillas, tostadas o arroz.');
-  if(/tortilla|tostada/.test(t))subs.push('Tortilla: cambia por pan, bolillo o bowl de arroz.');
-  if(/mayonesa|crema/.test(t))subs.push('Grasa: cambia por aguacate, yogurt griego o aceite de oliva.');
-  if(!subs.length)subs.push('Usa el icono ↔ en la calculadora para seleccionar cualquier sustituto y recalcular.');
-  el.innerHTML=`<div class="ok" style="margin-top:8px"><b>Sustituciones que combinan:</b><ul>${subs.map(x=>`<li>${x}</li>`).join('')}</ul></div>`;
+  var rules=[
+    [/pollo|carne|pavo|jamón|cerdo|res|bistec|molida/,'🍗 <b>Proteína:</b> cámbiala por atún, huevo, frijoles, lentejas o la que tengas.'],
+    [/atún|sardina|salmón|tilapia|pescado|camarón/,'🐟 <b>Pescado:</b> cámbialo por pollo, huevo o garbanzos.'],
+    [/queso/,'🧀 <b>Queso:</b> usa cualquiera que derrita (Oaxaca, manchego, mozzarella) o ponle menos.'],
+    [/crema|leche|yogur|mantequilla/,'🥛 <b>Lácteos:</b> usa versión sin lactosa, o aguacate/aceite para la cremosidad.'],
+    [/chile|jalape|serrano|chipotle|habanero|árbol|arbol/,'🌶️ <b>Chile:</b> cámbialo por pimiento, pimienta o salsa embotellada — o déjalo sin picante, la receta sale igual.'],
+    [/cebolla\b/,'🧅 <b>Cebolla:</b> usa cebolla en polvo, poro o la parte blanca del cebollín.'],
+    [/ajo/,'🧄 <b>Ajo:</b> usa ajo en polvo (¼ cdita ≈ 1 diente).'],
+    [/jitomate|tomate/,'🍅 <b>Jitomate:</b> usa de lata, puré de tomate o salsa lista.'],
+    [/frijol/,'🫘 <b>Frijoles:</b> cámbialos por lentejas, garbanzos o carne; si son relleno o topping, puedes omitirlos.'],
+    [/limón|lima/,'🍋 <b>Limón:</b> usa vinagre o un poco de jugo de naranja.'],
+    [/arroz/,'🍚 <b>Arroz:</b> cámbialo por quinoa, fideo, papa o el que tengas.'],
+    [/pan|bolillo|telera/,'🍞 <b>Pan:</b> cámbialo por tortillas, tostadas o arroz.'],
+    [/tortilla|tostada/,'🌮 <b>Tortilla:</b> cámbiala por pan, bolillo o un bowl de arroz.'],
+    [/avena/,'🥣 <b>Avena:</b> usa amaranto, granola molida o harina.'],
+    [/azúcar|miel|piloncillo/,'🍯 <b>Dulce:</b> cambia azúcar por miel o piloncillo (usa un poco menos).'],
+    [/zanahoria|calabaz|brócoli|brocoli|chayote|ejote|verdura|espinaca|pimiento|elote/,'🥦 <b>Verduras:</b> usa las que tengas; casi cualquier verdura cocida funciona (papa, zanahoria, calabacita, chayote, brócoli).']
+  ];
+  rules.forEach(function(r){if(r[0].test(t))subs.push(r[1]);});
+  var opt=[]; [[/cebollín|cebollin/,'cebollín'],[/cilantro/,'cilantro'],[/perejil/,'perejil'],[/ajonjolí|ajonjoli|sésamo|sesamo/,'ajonjolí'],[/orégano|oregano/,'orégano'],[/tajín|tajin/,'Tajín'],[/hierbas|epazote|laurel/,'hierbas']].forEach(function(r){if(r[0].test(t))opt.push(r[1]);});
+  var html='<div class="ok" style="margin-top:8px"><b>↔ Cómo cambiar ingredientes:</b><ul style="margin:6px 0">'
+    +(subs.length?subs.map(function(x){return '<li>'+x+'</li>';}).join(''):'<li>Casi todo se ajusta: usa lo que tengas en cantidades parecidas.</li>')+'</ul>';
+  if(opt.length)html+='<div class="mini" style="font-size:12px"><b>✅ Puedes hacerla SIN:</b> '+opt.join(', ')+'. Son para dar sabor o decorar; la receta sale igual sin ellos.</div>';
+  html+='<div class="muted" style="font-size:12px;margin-top:6px">Regla simple: cambia un ingrediente por otro del <b>mismo tipo</b> (proteína por proteína, verdura por verdura) y en cantidad parecida.</div></div>';
+  el.innerHTML=html;
 }
 function openRecipeCalculator(key){
   let el=document.getElementById('recipeCalc_'+key);if(!el)return;
@@ -11880,7 +11942,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.20.0';
+    window.HM_APP_VERSION='46.21.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

@@ -1,8 +1,21 @@
 {
-  "latest": "46.20.0",
-  "date": "2026-07-12",
+  "latest": "46.21.0",
+  "date": "2026-07-13",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.21.0",
+      "date": "2026-07-13",
+      "type": "recomendada",
+      "nuevas": [
+        "Thermomix TM5 - funciones y trucos (en Recetas > Mas herramientas): moler avena/arroz, azucar glass, especias, cafe, pan molido, picar, batir, amasar, pesar y mas, con sus ajustes",
+        "Sustituciones mucho mas utiles: te dice con que cambiar cada ingrediente (chile, cebolla, verduras, proteina...) y cuales puedes omitir (cebollin, cilantro, frijoles de topping)"
+      ],
+      "cambios": [
+        "Los pasos que dicen 'precalienta el horno/sarten' ahora muestran cuanto tarda en calentar (~10-15 min horno, ~2-3 min sarten)"
+      ],
+      "errores": []
+    },
     {
       "version": "46.20.0",
       "date": "2026-07-12",
