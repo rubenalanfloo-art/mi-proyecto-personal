@@ -2,7 +2,7 @@
 
 App personal **offline-first** (PWA) con sincronización opcional entre **Windows y iPhone** mediante Supabase.
 
-🌐 **App en vivo:** https://rubenalanfloo-art.github.io/mi-proyecto-personal/
+🌐 **App en vivo:** https://gorumbo.github.io/mi-proyecto-personal/
 
 ## Características
 
@@ -14,7 +14,7 @@ App personal **offline-first** (PWA) con sincronización opcional entre **Window
 ## Uso
 
 ### Como web (GitHub Pages)
-Abre directamente https://rubenalanfloo-art.github.io/mi-proyecto-personal/ e instálala desde el navegador si quieres tenerla como app.
+Abre directamente https://gorumbo.github.io/mi-proyecto-personal/ e instálala desde el navegador si quieres tenerla como app.
 
 ### Como app de escritorio (Electron)
 ```bash
