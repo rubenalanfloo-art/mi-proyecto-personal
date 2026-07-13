@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.8.1';
+  window.HM_APP_VERSION='46.9.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -2558,11 +2558,20 @@ function suplementosHTML(){
     +'<p class="muted" style="margin:0 0 8px;font-size:12px">Info general para orientarte (no es consejo médico). Toca "Buscar en Amazon" para ver marcas y precios. Si tomas medicamentos o tienes alguna condición, consulta antes.</p>'
     +'<div class="grid">'+SUPPLEMENTS.map(function(s,i){
       var macro=[s.kcal?s.kcal+' kcal':'',s.prot?('P '+s.prot+'g'):''].filter(Boolean).join(' · ');
+      var brands=(s.marcas||'').split(',').map(function(b){return b.trim();}).filter(Boolean);
+      var buyBox='<details class="rct-adv" style="margin-top:8px"><summary>🛒 Anota cuál compraste</summary><div style="padding:6px 2px">'
+        +'<div class="muted" style="font-size:12px;margin-bottom:6px">Toca la marca que compraste y se guarda en “Mis productos” (🛒 Precios) con su nutrición por porción.</div>'
+        +'<input id="supCost_'+i+'" type="number" inputmode="decimal" step=".01" placeholder="Costo $ (opcional)" style="max-width:180px;margin-bottom:6px">'
+        +'<div class="row" style="flex-wrap:wrap;gap:6px">'
+        + brands.map(function(b){return '<button class="btn" data-brand="'+encodeURIComponent(b)+'" onclick="buySupplement('+i+',this)">'+safeText(b)+'</button>';}).join('')
+        + '<button class="btn" onclick="buySupplementOther('+i+')">✏️ Otra marca</button>'
+        +'</div><div id="supBuyOut_'+i+'"></div></div></details>';
       return '<div class="mini"><b>'+s.e+' '+safeText(s.name)+'</b>'+(macro?' <span class="muted" style="font-size:12px">('+macro+' por porción)</span>':'')
         +'<div style="font-size:13px;margin:4px 0">'+safeText(s.para)+'</div>'
         +'<div class="muted" style="font-size:12px"><b>Dosis:</b> '+safeText(s.dosis)+'</div>'
         +'<div class="muted" style="font-size:12px"><b>Marcas comunes:</b> '+safeText(s.marcas)+'</div>'
         +'<div class="row" style="gap:6px;margin-top:8px"><a class="btn primary" style="text-decoration:none" target="_blank" rel="noopener" href="'+supplementSearchLink(s.buscar)+'">🔎 Buscar en Amazon</a>'+(s.prot?'<button class="btn" onclick="logSupplement('+i+')">✅ Comí esto</button>':'')+'</div>'
+        +buyBox
         +'<div id="supOut_'+i+'"></div></div>';
     }).join('')+'</div></div></details>';
 }
@@ -2571,10 +2580,45 @@ function logSupplement(i){
   var today=new Date().toISOString().slice(0,10);
   if(!state.diary)state.diary={};
   if(!state.diary[today])state.diary[today]={breakfast:[],lunch:[],dinner:[],snacks:[]};
-  state.diary[today].snacks.push({name:s.name,kcal:+s.kcal||0,prot:+s.prot||0,carb:+s.carb||0,fat:0});
+  var token='sup_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  state.diary[today].snacks.push({name:s.name,kcal:+s.kcal||0,prot:+s.prot||0,carb:+s.carb||0,fat:0,_sid:token});
   save();
+  try{if(document.getElementById('diaryOut'))renderDiary();}catch(e){}
   var out=document.getElementById('supOut_'+i);
-  if(out)out.innerHTML='<div class="ok" style="margin-top:6px;font-size:12px;padding:5px 8px">✅ Sumado al contador de hoy'+(s.prot?(' · '+s.prot+'g proteína'):'')+'</div>';
+  if(out)out.innerHTML='<div class="ok" style="margin-top:6px;font-size:12px;padding:5px 8px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap"><span>✅ Sumado al contador de hoy'+(s.prot?(' · '+s.prot+'g proteína'):'')+'</span><button class="btn" style="padding:2px 10px;font-size:12px" onclick="undoSupplement('+i+',\''+token+'\')">↩️ Cancelar</button></div>';
+}
+function undoSupplement(i,token){
+  var today=new Date().toISOString().slice(0,10);
+  var d=state.diary&&state.diary[today];
+  if(d&&Array.isArray(d.snacks)){
+    var idx=d.snacks.map(function(x){return x&&x._sid;}).lastIndexOf(token);
+    if(idx>=0)d.snacks.splice(idx,1);
+  }
+  save();
+  try{if(document.getElementById('diaryOut'))renderDiary();}catch(e){}
+  var out=document.getElementById('supOut_'+i);
+  if(out)out.innerHTML='<div class="muted" style="margin-top:6px;font-size:12px;padding:5px 8px">↩️ Se quitó del contador de hoy.</div>';
+}
+function _saveBoughtSupplement(i,brand){
+  var s=SUPPLEMENTS[i]; if(!s)return;
+  var costEl=document.getElementById('supCost_'+i);
+  var cost=costEl?(+costEl.value||0):0;
+  if(!Array.isArray(state.myProducts))state.myProducts=[];
+  var prod={id:ppUUID(),name:s.name,brand:(brand||'').trim(),serving:'1 porción',cost:cost,kcal:+s.kcal||0,prot:+s.prot||0,carb:+s.carb||0,fat:0,updated_at:new Date().toISOString()};
+  state.myProducts.push(prod);
+  save();
+  try{renderMyProducts();}catch(e){}
+  var out=document.getElementById('supBuyOut_'+i);
+  if(out)out.innerHTML='<div class="ok" style="margin-top:6px;font-size:12px;padding:5px 8px">✅ Guardado en “Mis productos”'+(prod.brand?(' · '+safeText(prod.brand)):'')+(cost?(' · '+money(cost)):'')+'. Lo ves en 🛒 Precios › Mis productos.</div>';
+}
+function buySupplement(i,btn){
+  var brand=btn?decodeURIComponent(btn.getAttribute('data-brand')||''):'';
+  _saveBoughtSupplement(i,brand);
+}
+function buySupplementOther(i){
+  var b=prompt('¿Qué marca compraste?');
+  if(b==null)return;
+  _saveBoughtSupplement(i,b);
 }
 function secRecetas(){
   let _tab=window._recTab||'todas';
@@ -3977,6 +4021,7 @@ function secEjercicio(){
       <button class="btn" onclick="modifyFitnessOnlyToday('cansado')">😴 Estoy cansado</button>
       <button class="btn" onclick="modifyFitnessOnlyToday('poco_tiempo')">⏱️ Poco tiempo</button>
       <button class="btn" onclick="renderSimpleFitnessProgress()">📊 Progreso</button>
+      <button class="btn" onclick="showSavedRoutines()">📁 Rutinas guardadas</button>
     </div>
     <div class="fit-clean-status" style="margin-top:12px">
       <div class="fit-clean-chip"><b>${safeText(title)}</b><span>estado de hoy</span></div>
@@ -3986,7 +4031,7 @@ function secEjercicio(){
     <div id="routineTodayOut"></div>
     <div id="simpleFitnessOut" class="fit-clean-result" style="margin-top:12px"><div class="muted">Toca <b>🏋️ Mi rutina de hoy</b> para ver tu rutina, registrar el peso y ajustar el esfuerzo.</div></div>
   </div>
-  <details class="fit-clean-details">
+  <details id="savedRoutinesDetails" class="fit-clean-details">
     <summary>📁 Rutinas guardadas</summary>
     <div class="fit-clean-details-body">
       <p class="muted" style="margin-top:0">Guarda cualquier rutina con "💾 Guardar esta rutina" y aquí la vuelves a usar cuando quieras.</p>
@@ -9555,6 +9600,11 @@ function renderSavedRoutines(){
     return '<div class="item"><b>'+safeText(r.name)+'</b> <span class="muted" style="font-size:12px">· '+((r.plan||[]).length)+' ejercicios</span><div class="muted" style="font-size:12px;margin:2px 0">'+exs+((r.plan||[]).length>3?'…':'')+'</div><div class="row" style="gap:6px;margin-top:4px"><button class="btn primary" onclick="loadSavedRoutine(\''+r.id+'\')">▶ Usar hoy</button><button class="btn" onclick="deleteSavedRoutine(\''+r.id+'\')">🗑</button></div></div>';
   }).join('')+'</div>';
 }
+function showSavedRoutines(){
+  try{renderSavedRoutines();}catch(e){}
+  var d=document.getElementById('savedRoutinesDetails');
+  if(d){d.open=true; try{d.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}}
+}
 function loadSavedRoutine(id){
   var r=(state.savedRoutines||[]).find(function(x){return x.id===id;}); if(!r)return;
   state.fitnessToday={date:todayISO(),plan:JSON.parse(JSON.stringify(r.plan)),ctx:{focus:r.name,hard:false,steps:0,energy:3,pain:0,sleep:7,equip:'Gimnasio'},createdAt:new Date().toISOString(),loadedName:r.name};
@@ -11333,7 +11383,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.8.1';
+    window.HM_APP_VERSION='46.9.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

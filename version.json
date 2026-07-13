@@ -1,8 +1,21 @@
 {
-  "latest": "46.8.1",
-  "date": "2026-07-11",
+  "latest": "46.9.0",
+  "date": "2026-07-12",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.9.0",
+      "date": "2026-07-12",
+      "type": "recomendada",
+      "nuevas": [
+        "Suplementos: boton 'Anota cual compraste' para guardar la marca y el precio que elegiste en Amazon dentro de Mis productos",
+        "Ejercicio: nuevo boton 'Rutinas guardadas' junto a Progreso para abrir tus rutinas sin cambiar de pantalla"
+      ],
+      "cambios": [
+        "Suplementos: el boton 'Comi esto' ahora tiene 'Cancelar' para deshacer si te equivocas"
+      ],
+      "errores": []
+    },
     {
       "version": "46.8.1",
       "date": "2026-07-11",
