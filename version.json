@@ -1,8 +1,19 @@
 {
-  "latest": "46.7.4",
+  "latest": "46.8.0",
   "date": "2026-07-11",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.8.0",
+      "date": "2026-07-11",
+      "type": "recomendada",
+      "nuevas": [
+        "Nuevas formas de entrenar: Tren superior, Tren inferior, Calistenia, Yoga y Corrido (cardio)",
+        "Guarda tus rutinas con Guardar esta rutina y vuelve a usarlas desde Rutinas guardadas"
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "46.7.4",
       "date": "2026-07-11",

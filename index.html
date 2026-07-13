@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.7.4';
+  window.HM_APP_VERSION='46.8.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -447,7 +447,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
       </div>
     </div>
     <div class="appStatusBox">
-      <span class="versionChip">v46.7.4</span>
+      <span class="versionChip">v46.8.0</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -535,7 +535,7 @@ state.uiSettings=state.uiSettings||{dark:false,hiddenTabs:[],tutorialDone:false}
 if(!state.uiSettings.mode)state.uiSettings.mode='personal';
 state.trash=state.trash||[];
 state.workLog=state.workLog||[];
-state.workoutLog=state.workoutLog||[];
+state.workoutLog=state.workoutLog||[];state.savedRoutines=state.savedRoutines||[];
 state.fitnessToday=state.fitnessToday||null;
 state.activeWorkout=state.activeWorkout||null;
 state.emergency=state.emergency||{name:'Ruben',blood:'',allergies:'',medications:'',contact:'',insurance:''};
@@ -3952,6 +3952,13 @@ function secEjercicio(){
     <div id="routineTodayOut"></div>
     <div id="simpleFitnessOut" class="fit-clean-result" style="margin-top:12px"><div class="muted">Toca <b>🏋️ Mi rutina de hoy</b> para ver tu rutina, registrar el peso y ajustar el esfuerzo.</div></div>
   </div>
+  <details class="fit-clean-details">
+    <summary>📁 Rutinas guardadas</summary>
+    <div class="fit-clean-details-body">
+      <p class="muted" style="margin-top:0">Guarda cualquier rutina con "💾 Guardar esta rutina" y aquí la vuelves a usar cuando quieras.</p>
+      <div id="savedRoutinesOut"></div>
+    </div>
+  </details>
   <details id="fitnessRegisterDetails" class="fit-clean-details">
     <summary>✍️ Registrar un ejercicio extra (fuera de tu rutina)</summary>
     <div class="fit-clean-details-body">
@@ -3988,7 +3995,7 @@ function secEjercicio(){
     <summary>⚙️ Ajustes de rutina</summary>
     <div class="fit-clean-details-body">
       <div class="grid">
-        <div><label>Qué quiero hoy</label><select id="simpleFitGoal" onchange="if(state.fitnessToday){createFitnessToday();quickFitnessToday();}"><option>Ganar músculo sin quedar molido</option><option>Pecho</option><option>Espalda y hombros</option><option>Brazos</option><option>Pierna y glúteos</option><option>Core y movilidad</option><option>Recuperar</option></select></div>
+        <div><label>Qué quiero hoy</label><select id="simpleFitGoal" onchange="if(state.fitnessToday){createFitnessToday();quickFitnessToday();}"><option>Ganar músculo sin quedar molido</option><option>Tren superior</option><option>Tren inferior</option><option>Pecho</option><option>Espalda y hombros</option><option>Brazos</option><option>Pierna y glúteos</option><option>Calistenia</option><option>Yoga</option><option>Corrido (cardio)</option><option>Core y movilidad</option><option>Recuperar</option></select></div>
         <div><label>Equipo disponible</label><select id="simpleFitEquip"><option>Gimnasio</option><option>Mancuernas</option><option>Casa / sin equipo</option></select></div>
       </div>
       <details class="fit-clean-details" style="margin-top:10px">
@@ -7653,7 +7660,7 @@ function ownMauiPantry(i){
   let out=document.getElementById('fridgeOut');if(out)out.innerHTML='<div class="ok"><b>Agregado a tu nevera:</b> '+safeText(x.name)+'. Ahora puedes tocar Crear comida o Lista de compra.</div>';
 }
 
-function bindAll(){try{renderMyProducts()}catch(e){}try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);}
+function bindAll(){try{renderMyProducts()}catch(e){}try{renderSavedRoutines()}catch(e){}try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);}
 function convertWorkoutWeight(source){
   let lb=document.getElementById('workoutLb'),kg=document.getElementById('workoutKg'),out=document.getElementById('workoutWeightOut');
   if(!lb||!kg||!out)return;
@@ -9024,7 +9031,7 @@ function quickFitnessToday(){
   </div>
   ${(function(){var ef=state.fitEffort||'auto';return `<div style="margin:8px 0 10px">
     <div class="muted" style="font-size:12px;font-weight:800;margin-bottom:5px">¿Qué tan fuerte hoy?</div>
-    <div class="row" style="gap:6px;flex-wrap:wrap">${[['suave','🟢 Suave'],['auto','⚙️ Auto'],['normal','🟡 Normal'],['fuerte','🔴 Fuerte · crecer']].map(function(o){return '<button class="btn'+(ef===o[0]?' primary':'')+'" style="font-size:12px;padding:7px 11px" onclick="setFitEffort(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')}<button class="btn" style="font-size:12px;padding:7px 11px" onclick="varyFitnessToday()">🎲 Variar ejercicios</button></div>
+    <div class="row" style="gap:6px;flex-wrap:wrap">${[['suave','🟢 Suave'],['auto','⚙️ Auto'],['normal','🟡 Normal'],['fuerte','🔴 Fuerte · crecer']].map(function(o){return '<button class="btn'+(ef===o[0]?' primary':'')+'" style="font-size:12px;padding:7px 11px" onclick="setFitEffort(\''+o[0]+'\')">'+o[1]+'</button>';}).join('')}<button class="btn" style="font-size:12px;padding:7px 11px" onclick="varyFitnessToday()">🎲 Variar ejercicios</button><button class="btn" style="font-size:12px;padding:7px 11px" onclick="saveCurrentRoutine()">💾 Guardar esta rutina</button></div>
     <div class="muted" style="font-size:11px;margin-top:5px">Los ejercicios cambian cada día para no aburrirte. Toca 🎲 para otra variación, o "Cambiar si está ocupado" en cada uno.</div>
     ${ef==='fuerte'?'<div class="mini" style="margin-top:8px;font-size:12px">💪 <b>Para crecer músculo con tu trabajo físico:</b> come <b>de más</b> con proteína, sube el peso al completar las reps y duerme bien. Caminar/jardinear es cardio, no cuenta como músculo.</div>':''}
   </div>`;})()}
@@ -9468,6 +9475,58 @@ function fitnessExerciseBank(){
 // Día del año (0-365): sirve para rotar los ejercicios cada día.
 function fitDaySeed(){ var d=new Date(); return Math.floor((d-new Date(d.getFullYear(),0,0))/86400000); }
 function varyFitnessToday(){ state.fitVariant=(state.fitVariant||0)+1; save(); try{createFitnessToday();}catch(e){} try{quickFitnessToday();}catch(e){} }
+// Formas de entrenar especiales (no por músculo): calistenia, yoga, cardio.
+const SPECIAL_WORKOUTS={
+  calistenia:{exs:[
+    {name:'Flexiones (push ups)',muscle:'Pecho',sets:3,reps:'10-20',rest:60,alts:['Flexiones inclinadas','Flexiones diamante','Flexiones declinadas','Flexiones en rodillas']},
+    {name:'Dominadas',muscle:'Espalda',sets:3,reps:'5-12',rest:90,alts:['Remo invertido bajo una mesa','Dominadas asistidas con banda','Australian pull up']},
+    {name:'Sentadilla libre',muscle:'Pierna',sets:3,reps:'15-25',rest:60,alts:['Sentadilla búlgara','Zancadas','Sentadilla a una pierna asistida','Sentadilla con salto']},
+    {name:'Fondos en banca',muscle:'Tríceps',sets:3,reps:'10-15',rest:60,alts:['Fondos en paralelas','Fondos entre dos sillas']},
+    {name:'Plancha',muscle:'Core',sets:3,reps:'30-60s',rest:45,alts:['Plancha lateral','Hollow hold','Mountain climbers','Elevación de piernas']},
+    {name:'Puente de glúteo',muscle:'Glúteo',sets:3,reps:'15-20',rest:45,alts:['Puente a una pierna','Hip thrust en el piso']}
+  ]},
+  yoga:{exs:[
+    {name:'Saludo al sol',muscle:'Cuerpo completo',sets:2,reps:'5 rondas',rest:20,alts:['Saludo al sol B']},
+    {name:'Perro boca abajo',muscle:'Espalda y piernas',sets:2,reps:'30-45 s',rest:15,alts:['Perro boca arriba']},
+    {name:'Guerrero I y II',muscle:'Piernas y cadera',sets:2,reps:'30 s por lado',rest:15,alts:['Guerrero III','Silla']},
+    {name:'Postura del niño',muscle:'Espalda baja',sets:2,reps:'45-60 s',rest:10,alts:['Postura del gato']},
+    {name:'Gato-camello',muscle:'Columna',sets:2,reps:'8-10',rest:10,alts:['Rotación torácica','Cobra']},
+    {name:'Torsión sentado',muscle:'Columna y cadera',sets:2,reps:'30 s por lado',rest:10,alts:['Torsión tumbado','Estiramiento de isquios']}
+  ]},
+  corrido:{exs:[
+    {name:'Calentamiento caminando rápido',muscle:'Cardio',sets:1,reps:'5 min',rest:0,alts:['Movilidad dinámica 5 min']},
+    {name:'Trote continuo',muscle:'Cardio',sets:1,reps:'15-30 min',rest:0,alts:['Intervalos: 1 min fuerte / 2 min suave','Trote suave 20 min','Caminata rápida 30 min']},
+    {name:'Enfriamiento caminando',muscle:'Cardio',sets:1,reps:'5 min',rest:0,alts:['Trote muy suave 3 min']},
+    {name:'Estiramiento de piernas',muscle:'Movilidad',sets:1,reps:'5 min',rest:0,alts:['Estirar isquios y gemelos']}
+  ]}
+};
+function specialWorkoutKey(focus){focus=String(focus||'').toLowerCase();if(focus.includes('calistenia'))return 'calistenia';if(focus.includes('yoga'))return 'yoga';if(focus.includes('corrido')||focus.includes('cardio')||focus.includes('correr'))return 'corrido';return null;}
+// ---- Guardar rutinas ----
+function saveCurrentRoutine(){
+  var pack=state.fitnessToday; if(!pack||!pack.plan||!pack.plan.length){alert('Primero crea tu rutina con "Mi rutina de hoy".');return;}
+  var sug=(pack.loadedName||pack.semanaDayName||(pack.ctx&&pack.ctx.focus)||'Mi rutina');
+  var name=prompt('Nombre para guardar esta rutina:', String(sug));
+  if(name==null)return; name=String(name).trim()||'Rutina';
+  if(!Array.isArray(state.savedRoutines))state.savedRoutines=[];
+  state.savedRoutines.push({id:ppUUID(),name:name,plan:JSON.parse(JSON.stringify(pack.plan)),date:todayISO()});
+  save(); try{renderSavedRoutines()}catch(e){}
+  alert('✅ Rutina guardada: '+name);
+}
+function renderSavedRoutines(){
+  var el=document.getElementById('savedRoutinesOut'); if(!el)return;
+  var list=state.savedRoutines||[];
+  if(!list.length){el.innerHTML='<p class="muted" style="margin:0">Aún no guardas rutinas. Crea una y toca "💾 Guardar esta rutina".</p>';return;}
+  el.innerHTML='<div class="list">'+list.map(function(r){
+    var exs=(r.plan||[]).slice(0,3).map(function(x){return safeText(x.name);}).join(', ');
+    return '<div class="item"><b>'+safeText(r.name)+'</b> <span class="muted" style="font-size:12px">· '+((r.plan||[]).length)+' ejercicios</span><div class="muted" style="font-size:12px;margin:2px 0">'+exs+((r.plan||[]).length>3?'…':'')+'</div><div class="row" style="gap:6px;margin-top:4px"><button class="btn primary" onclick="loadSavedRoutine(\''+r.id+'\')">▶ Usar hoy</button><button class="btn" onclick="deleteSavedRoutine(\''+r.id+'\')">🗑</button></div></div>';
+  }).join('')+'</div>';
+}
+function loadSavedRoutine(id){
+  var r=(state.savedRoutines||[]).find(function(x){return x.id===id;}); if(!r)return;
+  state.fitnessToday={date:todayISO(),plan:JSON.parse(JSON.stringify(r.plan)),ctx:{focus:r.name,hard:false,steps:0,energy:3,pain:0,sleep:7,equip:'Gimnasio'},createdAt:new Date().toISOString(),loadedName:r.name};
+  save(); try{quickFitnessToday()}catch(e){}
+}
+function deleteSavedRoutine(id){ if(!confirm('¿Borrar esta rutina guardada?'))return; state.savedRoutines=(state.savedRoutines||[]).filter(function(x){return x.id!==id;}); save(); try{renderSavedRoutines()}catch(e){} }
 function readFitnessContext(){
   let lastWalk=(state.walks||[]).slice(-1)[0]||{};
   let steps=+(document.getElementById('fitSteps')?.value||lastWalk.steps||22000);
@@ -9478,6 +9537,17 @@ function readFitnessContext(){
   return {date:todayISO(),steps,energy,pain,sleep,focus,equip,hard,recovery};
 }
 function buildFitnessTodayPlan(ctx){
+  // Formas de entrenar especiales (calistenia, yoga, corrido): plan propio con variedad por día.
+  var sk=specialWorkoutKey(ctx.focus);
+  if(sk){
+    var sw=SPECIAL_WORKOUTS[sk], seed=fitDaySeed()+(state.fitVariant||0);
+    return sw.exs.map(function(x,idx){
+      var o=Object.assign({},x); var pool=[x.name].concat(x.alts||[]).filter(function(v,i,a){return v&&a.indexOf(v)===i;});
+      o.name=pool[((seed+idx*3)%pool.length+pool.length)%pool.length]; o.alts=pool.filter(function(a){return a!==o.name;});
+      o.note=sk==='yoga'?'Respira lento y no fuerces la postura.':sk==='corrido'?'Ritmo cómodo: si puedes hablar mientras corres, vas bien.':'Técnica limpia, baja controlado. Suma reps o una serie cuando se sienta fácil.';
+      return o;
+    });
+  }
   let b=fitnessExerciseBank();
   // Esfuerzo elegido por el usuario: 'suave' | 'auto' | 'normal' | 'fuerte'. Por defecto 'auto' (detecta día pesado).
   let effort=state.fitEffort||'auto';
@@ -9489,9 +9559,10 @@ function buildFitnessTodayPlan(ctx){
   if(ctx.focus.includes('Brazos'))keys=hardSel?['curl','tri','lat','core']:['press','row','curl','tri','lat'];
   if(ctx.focus.includes('Pecho'))keys=hardSel?['press','row','tri']:['press','row','tri','lat'];
   if(ctx.focus.includes('Core'))keys=hardSel?['mobility','core','face']:['core','face','row','mobility'];
-  if(ctx.focus.includes('Pierna'))keys=hardSel?['leg','hip','core']:['leg','ham','hip','calf'];
+  if(ctx.focus.includes('Pierna')||ctx.focus.includes('Tren inferior'))keys=hardSel?['leg','hip','core']:['leg','ham','hip','calf'];
+  if(ctx.focus.includes('Tren superior'))keys=hardSel?['press','row','lat','core']:['press','row','pull','lat','curl','tri'];
   if(ctx.recovery)keys=['mobility','core','face']; // seguridad: si vienes con dolor fuerte/energía muy baja, entrena suave aunque elijas fuerte
-  if(big&&!ctx.recovery){ let extra=ctx.focus.includes('Pierna')?['leg','ham','hip','calf','core']:['pull','tri','curl','face','hip']; keys=[...new Set([...keys,...extra])].slice(0,6); } // versión para crecer: 6 ejercicios
+  if(big&&!ctx.recovery){ let extra=(ctx.focus.includes('Pierna')||ctx.focus.includes('Tren inferior'))?['leg','ham','hip','calf','core']:['pull','tri','curl','face','hip']; keys=[...new Set([...keys,...extra])].slice(0,6); } // versión para crecer: 6 ejercicios
   let seedBase=fitDaySeed()+(state.fitVariant||0); // cambia cada día y con el botón "Variar"
   return keys.map((k,idx)=>{
     let x={...b[k]};
@@ -11228,7 +11299,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.7.4';
+    window.HM_APP_VERSION='46.8.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
