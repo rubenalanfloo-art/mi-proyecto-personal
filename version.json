@@ -1,8 +1,19 @@
 {
-  "latest": "46.18.0",
+  "latest": "46.19.0",
   "date": "2026-07-12",
   "minVersion": "43.0.0",
   "history": [
+    {
+      "version": "46.19.0",
+      "date": "2026-07-12",
+      "type": "recomendada",
+      "nuevas": [
+        "Combinar verduras: elige varias y la app te dice el orden para agregarlas y que queden cocidas al mismo tiempo (olla y Thermomix TM5)",
+        "Guia 'Al horno': temperaturas y tiempos para verduras, carnes, totopos/tostadas, hot dogs, hamburguesas y huevos, con buscador y filtro por tipo"
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "46.18.0",
       "date": "2026-07-12",

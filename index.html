@@ -355,7 +355,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='46.18.0';
+  window.HM_APP_VERSION='46.19.0';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -2806,6 +2806,80 @@ function verdurasCocidasHTML(){
     +['poca','normal','mucha'].map(function(x){return '<button class="btn'+(x==='normal'?' primary':'')+'" id="vegQ_'+x+'" onclick="setVegQty(\''+x+'\')">'+({poca:'Poca',normal:'Normal',mucha:'Mucha'})[x]+'</button>';}).join('')
     +'</div>'
     +'<div id="veggiesOut" style="margin-top:10px"></div>'
+    +'<details style="margin-top:10px"><summary>🧺 Combinar varias verduras</summary><div class="card"><p class="muted" style="margin-top:0;font-size:12px">Elige 2 o más y te digo el orden para agregarlas y que queden cocidas al mismo tiempo (sin que unas queden crudas y otras batidas).</p><div id="vegCombineOut"></div></div></details>'
+    +'</div></details>';
+}
+var _vegPicked=[];
+function parseVegMin(s){var m=String(s).match(/(\d+)(?:-(\d+))?/);return m?+(m[2]||m[1]):0;}
+function vegPickToggle(name){var i=_vegPicked.indexOf(name);if(i>=0)_vegPicked.splice(i,1);else _vegPicked.push(name);renderVegCombine();}
+function renderVegCombine(){
+  var el=document.getElementById('vegCombineOut'); if(!el)return;
+  var chips=VEGGIES.map(function(v){var on=_vegPicked.indexOf(v.n)>=0;return '<button class="btn'+(on?' primary':'')+'" style="font-size:12px;padding:6px 9px;margin:2px" onclick="vegPickToggle(\''+v.n.replace(/'/g,"\\'")+'\')">'+safeText(v.n)+'</button>';}).join('');
+  var plan;
+  if(_vegPicked.length>=2){
+    var sel=VEGGIES.filter(function(v){return _vegPicked.indexOf(v.n)>=0;}).map(function(v){return {n:v.n,t:parseVegMin(v.olla)};}).filter(function(x){return x.t>0;});
+    sel.sort(function(a,b){return b.t-a.t;});
+    var maxT=sel.length?sel[0].t:0;
+    var pasos=sel.map(function(x,i){return i===0?('Pon primero <b>'+safeText(x.n)+'</b> (tarda '+x.t+' min).'):('Cuando falten <b>'+x.t+' min</b>, agrega <b>'+safeText(x.n)+'</b>.');});
+    plan='<div class="ok" style="margin-top:8px;font-size:13px"><b>🫕 En olla (~'+maxT+' min en total):</b><br>Hierve el agua con sal y ve agregando por tiempos:<ol style="margin:6px 0 0;padding-left:18px">'+pasos.map(function(p){return '<li>'+p+'</li>';}).join('')+'</ol></div>'
+      +'<div class="mini" style="margin-top:8px;font-size:12px">🤖 <b>Thermomix TM5:</b> pon todas en el Varoma, Varoma '+maxT+' min, vel 1. Las que tardan menos, ponlas en la bandeja de arriba (se cocinan un poco menos).</div>';
+  }else{
+    plan='<div class="muted" style="font-size:12px;margin-top:6px">Elige al menos 2 verduras para ver el plan.</div>';
+  }
+  el.innerHTML='<div style="margin-bottom:6px">'+chips+'</div>'+plan+(_vegPicked.length?'<div style="margin-top:6px"><button class="btn" style="font-size:12px" onclick="_vegPicked=[];renderVegCombine()">Limpiar selección</button></div>':'');
+}
+// ===== Guía "Al horno": temperaturas y tiempos (verduras, carnes, botanas, hot dogs, hamburguesas, huevos) =====
+const OVEN=[
+ {n:'Papa (en gajos)',cat:'Verduras',temp:'200°C / 400°F',min:'35-40',tip:'Con aceite y sal; voltea a la mitad.'},
+ {n:'Camote (en gajos)',cat:'Verduras',temp:'200°C / 400°F',min:'30-35',tip:'Queda dulce y crujiente.'},
+ {n:'Calabaza en cubos',cat:'Verduras',temp:'200°C / 400°F',min:'25-30',tip:'Buena para bowls.'},
+ {n:'Zanahoria en bastones',cat:'Verduras',temp:'200°C / 400°F',min:'25-30',tip:'Un toque de miel la carameliza.'},
+ {n:'Brócoli / coliflor',cat:'Verduras',temp:'220°C / 425°F',min:'20-25',tip:'Bordes dorados = más sabor.'},
+ {n:'Calabacita / berenjena',cat:'Verduras',temp:'200°C / 400°F',min:'20',tip:'En rodajas, con aceite.'},
+ {n:'Pimiento y cebolla',cat:'Verduras',temp:'200°C / 400°F',min:'20-25',tip:'Perfectos para fajitas.'},
+ {n:'Elote',cat:'Verduras',temp:'200°C / 400°F',min:'25-30',tip:'Con cáscara o en papel aluminio.'},
+ {n:'Espárragos',cat:'Verduras',temp:'220°C / 425°F',min:'12-15',tip:'No los sobrecuezas.'},
+ {n:'Jitomate (para salsa asada)',cat:'Verduras',temp:'200°C / 400°F',min:'20',tip:'Con cebolla, ajo y chile.'},
+ {n:'Pechuga de pollo',cat:'Carnes',temp:'200°C / 400°F',min:'20-25',tip:'Interno 74°C/165°F. No la seques.'},
+ {n:'Muslo/pierna de pollo',cat:'Carnes',temp:'200°C / 400°F',min:'35-40',tip:'Piel hacia arriba para que dore.'},
+ {n:'Pollo entero',cat:'Carnes',temp:'190°C / 375°F',min:'75-90',tip:'~20 min por libra + 10 min de reposo.'},
+ {n:'Bistec / carne de res',cat:'Carnes',temp:'220°C / 425°F',min:'12-18',tip:'Término al gusto; deja reposar 5 min.'},
+ {n:'Costillas de cerdo',cat:'Carnes',temp:'160°C / 325°F',min:'120-150',tip:'Lento y tapadas quedan suaves.'},
+ {n:'Lomo de cerdo',cat:'Carnes',temp:'200°C / 400°F',min:'25-30',tip:'Interno 63°C/145°F.'},
+ {n:'Pescado (filete)',cat:'Carnes',temp:'200°C / 400°F',min:'12-15',tip:'Listo cuando se desmenuza fácil.'},
+ {n:'Salmón',cat:'Carnes',temp:'200°C / 400°F',min:'12-15',tip:'Con limón y sal.'},
+ {n:'Albóndigas',cat:'Carnes',temp:'200°C / 400°F',min:'20-25',tip:'Voltea a la mitad.'},
+ {n:'Totopos (tortilla de maíz)',cat:'Botana',temp:'180°C / 350°F',min:'10-12',tip:'Corta en triángulos, aceite y sal; voltea.'},
+ {n:'Tostadas horneadas',cat:'Botana',temp:'180°C / 350°F',min:'8-10',tip:'Tortilla entera hasta que dore.'},
+ {n:'Chips de camote/papa',cat:'Botana',temp:'190°C / 375°F',min:'15-20',tip:'Rodajas finas, voltea a la mitad.'},
+ {n:'Hot dogs (salchichas)',cat:'Rapidas',temp:'200°C / 400°F',min:'12-15',tip:'Un corte en espiral las dora mejor.'},
+ {n:'Hamburguesas (carne)',cat:'Rapidas',temp:'220°C / 425°F',min:'15-18',tip:'Voltea a la mitad; el queso al final.'},
+ {n:'Pan de hot dog/hamburguesa',cat:'Rapidas',temp:'180°C / 350°F',min:'3-4',tip:'Solo para tostar al final.'},
+ {n:'Nuggets/papas congeladas',cat:'Rapidas',temp:'220°C / 425°F',min:'15-20',tip:'Sin aceite; voltea a la mitad.'},
+ {n:'Huevos al horno (en molde)',cat:'Huevos',temp:'180°C / 350°F',min:'12-15',tip:'Rompe el huevo en un molde con aceite.'},
+ {n:'Muffins de huevo',cat:'Huevos',temp:'180°C / 350°F',min:'18-20',tip:'Huevo batido con verduras en molde de muffin.'},
+ {n:'Huevos rancheros al horno',cat:'Huevos',temp:'190°C / 375°F',min:'12-15',tip:'Sobre salsa, en refractario.'}
+];
+var _hornoCat='Todas';
+function setHornoCat(c){_hornoCat=c;var r=document.getElementById('hornoCatRow');if(r)Array.prototype.forEach.call(r.querySelectorAll('.btn'),function(b){b.classList.toggle('primary',b.getAttribute('data-c')===c);});renderHorno();}
+function renderHorno(){
+  var el=document.getElementById('hornoOut'); if(!el)return;
+  var q=((document.getElementById('hornoSearch')||{}).value||'').toLowerCase();
+  var list=OVEN.filter(function(o){return (_hornoCat==='Todas'||o.cat===_hornoCat)&&(!q||o.n.toLowerCase().indexOf(q)>=0);});
+  el.innerHTML=list.length?('<div class="grid">'+list.map(function(o){
+    return '<div class="mini"><b>'+safeText(o.n)+'</b> <span class="muted" style="font-size:12px">· '+safeText(o.cat)+'</span>'
+      +'<div style="font-size:13px;margin-top:4px">🌡️ <b>'+safeText(o.temp)+'</b> · ⏱️ <b>'+safeText(o.min)+' min</b></div>'
+      +(o.tip?'<div class="muted" style="font-size:12px;margin-top:2px">💡 '+safeText(o.tip)+'</div>':'')
+      +'</div>';
+  }).join('')+'</div>'):'<p class="muted">Nada con ese nombre.</p>';
+}
+function hornoHTML(){
+  var cats=['Todas','Verduras','Carnes','Botana','Rapidas','Huevos'];
+  return '<details><summary>🔥 Al horno — temperaturas y tiempos</summary><div class="card">'
+    +'<p class="muted" style="margin-top:0">Temperatura y tiempo para hornear verduras, carnes, totopos/tostadas, hot dogs, hamburguesas y huevos. Precalienta el horno primero.</p>'
+    +'<input id="hornoSearch" placeholder="Busca (pollo, papa, totopos...)" oninput="renderHorno()" style="width:100%">'
+    +'<div id="hornoCatRow" class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">'+cats.map(function(c){return '<button class="btn'+(c==='Todas'?' primary':'')+'" data-c="'+c+'" style="font-size:12px;padding:6px 9px" onclick="setHornoCat(\''+c+'\')">'+c+'</button>';}).join('')+'</div>'
+    +'<div id="hornoOut" style="margin-top:10px"></div>'
     +'</div></details>';
 }
 function secRecetas(){
@@ -2851,6 +2925,7 @@ ${visualGuide('recetas')}
 <details><summary style="font-size:16px;font-weight:800">🧰 Más herramientas de comida</summary>
 <div style="padding-top:8px">
 ${verdurasCocidasHTML()}
+${hornoHTML()}
 <details>
 <summary>🧩 Constructor de comida portátil</summary>
   <div class="card">
@@ -8005,7 +8080,7 @@ function ownMauiPantry(i){
   let out=document.getElementById('fridgeOut');if(out)out.innerHTML='<div class="ok"><b>Agregado a tu nevera:</b> '+safeText(x.name)+'. Ahora puedes tocar Crear comida o Lista de compra.</div>';
 }
 
-function bindAll(){try{renderMyProducts()}catch(e){}try{renderSavedRoutines()}catch(e){}try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);try{hydrateCloudImages(document)}catch(e){}try{renderVeggies()}catch(e){}}
+function bindAll(){try{renderMyProducts()}catch(e){}try{renderSavedRoutines()}catch(e){}try{renderMauiPantry('Todos')}catch(e){}renderMeals();renderRecipes();renderFridgePicked();renderBudget();renderWeight();renderWalks();renderInventory();renderProgressPhotos();renderSkinHistory();renderSkinChat();renderQuickNotes();renderCalendar();renderWellness();renderMoneyGoals();renderDocuments();renderTrash();renderWorkLog();renderPersonalMaintenance();renderCloudConfig();renderSystemHealth();renderFitnessCoach();renderGuidedWorkout();renderFitnessProgressPanel();try{renderFitStatsPanel()}catch(e){}applyUiSettings();try{ppApplyOwnerVisibility()}catch(e){}updateSyncBadge(getCloudSession()?(navigator.onLine?(state.offlineChanges?'Pendiente · '+state.offlineChanges:'Sincronizado'):'Sin conexión'+(state.offlineChanges?' · '+state.offlineChanges:'')):'Local',navigator.onLine?'#d9f5e7':'#ffd27d');calcMacros();setTimeout(drawGrafica,50);setTimeout(checkRecipeReminders,100);setTimeout(checkPersonalAlerts,110);setTimeout(showPinLock,120);setTimeout(()=>showAppTutorial(false),300);setTimeout(()=>{if(ppHandleRecovery())return;if(!getCloudSession()&&!window._loginPrompted){window._loginPrompted=true;showLoginScreen();}},600);setTimeout(()=>{try{renderActualizaciones()}catch(e){}},200);setTimeout(()=>{if(!PP_UPDATE.checked)ppCheckUpdates(false);},1600);setTimeout(()=>{if(document.getElementById('gastoList'))setGastoView('form');},10);try{hydrateCloudImages(document)}catch(e){}try{renderVeggies()}catch(e){}try{renderVegCombine()}catch(e){}try{renderHorno()}catch(e){}}
 function convertWorkoutWeight(source){
   let lb=document.getElementById('workoutLb'),kg=document.getElementById('workoutKg'),out=document.getElementById('workoutWeightOut');
   if(!lb||!kg||!out)return;
@@ -11743,7 +11818,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='46.18.0';
+    window.HM_APP_VERSION='46.19.0';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
