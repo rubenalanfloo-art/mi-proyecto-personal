@@ -361,7 +361,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.147';
+  window.HM_APP_VERSION='1.148';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -455,7 +455,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
     </div>
     <div class="appStatusBox">
       <span id="regionChip" style="cursor:pointer;background:#eaf9f0;border:1px solid #9dd5b4;color:#0d6043;border-radius:999px;padding:4px 10px;font-weight:900;font-size:12px" onclick="abrirRegion()" title="Cambiar región">🌎</span>
-      <span class="versionChip">v1.147</span>
+      <span class="versionChip">v1.148</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -917,6 +917,50 @@ function goBackTab(){
   if(!prev){openTab('🏠 Inicio',false);return}
   openTab(prev.tab,false);
 }
+// ===== Atajos de teclado (versión web) =====
+function mostrarAtajos(){
+  alert('⌨️ Atajos de teclado (web):\n\n'
+    +'Esc  →  Atrás (o cerrar / quitar foco)\n'
+    +'Ctrl + ←  →  Atrás\n'
+    +'1…6  →  Ir a una sección (1 Inicio, 2 Comer, 3 Fitness, 4 Dinero, 5 Día a día, 6 Ajustes)\n'
+    +'← →  →  Paso anterior / siguiente (en modo cocina)\n'
+    +'?  →  Ver esta ayuda');
+}
+document.addEventListener('keydown', function(e){
+  var el=e.target;
+  var escribiendo = el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable);
+
+  // ESC: cerrar panel de "agregar rápido", o quitar el foco de un campo, o ir atrás.
+  if(e.key==='Escape'){
+    var qa=document.getElementById('quickAddPanel');
+    if(qa && qa.classList.contains('open')){ try{toggleQuickAddPanel(false);}catch(_){} e.preventDefault(); return; }
+    if(escribiendo){ try{el.blur();}catch(_){} return; }
+    try{ goBackTab(); }catch(_){}
+    e.preventDefault();
+    return;
+  }
+
+  if(escribiendo) return; // el resto de atajos no aplican mientras escribes
+
+  // Modo cocina en marcha: ← y → mueven entre pasos.
+  if((e.key==='ArrowRight'||e.key==='ArrowLeft') && !e.ctrlKey && !e.metaKey && !e.altKey
+     && typeof CK!=='undefined' && CK && CK.t0 && document.getElementById('ckPanel')){
+    if(typeof ckIr==='function'){ ckIr(e.key==='ArrowRight'?1:-1); e.preventDefault(); return; }
+  }
+
+  // Ctrl/Alt/Cmd + ← : atrás
+  if((e.ctrlKey||e.metaKey||e.altKey) && e.key==='ArrowLeft'){ try{goBackTab();}catch(_){} e.preventDefault(); return; }
+  if(e.ctrlKey||e.metaKey||e.altKey) return; // no interferir con otras combinaciones del navegador
+
+  // Números 1..6 → ir a una sección
+  if(/^[1-9]$/.test(e.key)){
+    var gi=parseInt(e.key,10)-1;
+    if(typeof GROUPS!=='undefined' && GROUPS[gi]){ try{showGroup(GROUPS[gi].id);}catch(_){} e.preventDefault(); return; }
+  }
+
+  // ? → ayuda de atajos
+  if(e.key==='?'){ mostrarAtajos(); e.preventDefault(); return; }
+});
 function openTab(tab,saveHistory=true){
   let i=typeof tab==='number'?tab:tabs.indexOf(tab);
   if(i<0)return;
@@ -25189,7 +25233,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='1.147';
+    window.HM_APP_VERSION='1.148';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

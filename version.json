@@ -1,8 +1,18 @@
 {
-  "latest": "1.147",
+  "latest": "1.148",
   "date": "2026-07-18",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.148",
+      "date": "2026-07-18",
+      "type": "recomendada",
+      "nuevas": [
+        "Atajos de teclado en la web: Esc = atras, 1 a 6 = ir a una seccion, Ctrl+flecha izquierda = atras, flechas izquierda/derecha = paso anterior/siguiente en modo cocina, y ? = ver la lista de atajos."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.147",
       "date": "2026-07-18",
