@@ -1,8 +1,18 @@
 {
-  "latest": "1.142",
+  "latest": "1.143",
   "date": "2026-07-18",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.143",
+      "date": "2026-07-18",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "App mucho mas rapida de abrir: las fotos de ejercicios (2.66 MB) se movieron a un archivo aparte que carga en segundo plano, sin trabar el arranque. Siguen funcionando sin internet. El archivo principal bajo de 4.5 MB a 1.9 MB."
+      ],
+      "errores": []
+    },
     {
       "version": "1.142",
       "date": "2026-07-18",
