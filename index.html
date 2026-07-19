@@ -361,7 +361,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.145';
+  window.HM_APP_VERSION='1.146';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -455,7 +455,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
     </div>
     <div class="appStatusBox">
       <span id="regionChip" style="cursor:pointer;background:#eaf9f0;border:1px solid #9dd5b4;color:#0d6043;border-radius:999px;padding:4px 10px;font-weight:900;font-size:12px" onclick="abrirRegion()" title="Cambiar región">🌎</span>
-      <span class="versionChip">v1.145</span>
+      <span class="versionChip">v1.146</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -9116,22 +9116,49 @@ function vehHabito(nombre, freq){
    Vibra y suena cuando algo termina.
    ====================================================== */
 
-let CK = {plan:null, t0:null, tick:null, avisados:{}, idx:0};
+let CK = {plan:null, t0:null, tick:null, avisados:{}, idx:0, audio:null, mudo:false};
 
-function ckBeep(){
+// Desbloquea el audio (en móvil el sonido solo funciona tras tocar un botón). Se llama al tocar "Empezar".
+function ckAudioUnlock(){
   try{
-    let ctx = new (window.AudioContext||window.webkitAudioContext)();
-    [0,180,360].forEach(d=>{
-      let o=ctx.createOscillator(), g=ctx.createGain();
+    if(!CK.audio) CK.audio = new (window.AudioContext||window.webkitAudioContext)();
+    if(CK.audio.state==='suspended') CK.audio.resume();
+  }catch(e){}
+}
+function ckBeep(reps){
+  if(CK.mudo) return;
+  ckAudioUnlock();
+  try{
+    let ctx = CK.audio; if(!ctx) return;
+    let n = reps||3;
+    for(let k=0;k<n;k++){
+      let d=k*200, o=ctx.createOscillator(), g=ctx.createGain();
       o.connect(g); g.connect(ctx.destination);
       o.frequency.value=880; o.type='sine';
       g.gain.setValueAtTime(0.001, ctx.currentTime+d/1000);
-      g.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime+d/1000+0.01);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+d/1000+0.14);
-      o.start(ctx.currentTime+d/1000); o.stop(ctx.currentTime+d/1000+0.16);
-    });
+      g.gain.exponentialRampToValueAtTime(0.5, ctx.currentTime+d/1000+0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+d/1000+0.18);
+      o.start(ctx.currentTime+d/1000); o.stop(ctx.currentTime+d/1000+0.2);
+    }
   }catch(e){}
   try{ if(navigator.vibrate) navigator.vibrate([200,90,200]); }catch(e){}
+}
+// Voz: lee el paso en voz alta (útil cuando tienes las manos ocupadas cocinando).
+function ckHablar(txt){
+  if(CK.mudo || !txt) return;
+  try{
+    if(!('speechSynthesis' in window)) return;
+    let u=new SpeechSynthesisUtterance(String(txt));
+    u.lang='es-MX'; u.rate=1; u.pitch=1;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function ckMute(){
+  CK.mudo=!CK.mudo;
+  try{ if(CK.mudo && window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+  if(!CK.mudo) ckAudioUnlock();
+  ckPintar();
 }
 
 function ckMinutos(){ return CK.t0 ? (Date.now()-CK.t0)/60000 : 0; }
@@ -9143,10 +9170,12 @@ function ckMMSS(m){
 
 function ckEmpezar(){
   if(!CK.plan){ return; }
-  CK.t0 = Date.now(); CK.avisados = {};
+  ckAudioUnlock();
+  CK.t0 = Date.now(); CK.avisados = {}; CK.idx = CK.idx||0;
   if(CK.tick) clearInterval(CK.tick);
   CK.tick = setInterval(ckPintar, 1000);
   ckPintar();
+  let ps=ckPasos(); if(ps[CK.idx]) ckHablar(ps[CK.idx].texto);
 }
 function ckParar(){
   if(CK.tick) clearInterval(CK.tick);
@@ -9158,7 +9187,9 @@ function ckPasos(){ return CK.plan ? CK.plan.agenda.filter(a=>a.activo).sort((a,
 
 function ckIr(d){
   let ps = ckPasos();
-  CK.idx = Math.max(0, Math.min(ps.length-1, (CK.idx||0) + d));
+  CK.idx = Math.max(0, Math.min(ps.length, (CK.idx||0) + d)); // permite llegar a "ps.length" = ya terminé mis pasos
+  let p=ps[CK.idx];
+  if(p) ckHablar(p.texto);
   ckPintar();
 }
 
@@ -9192,10 +9223,24 @@ function ckPintar(){
       if(m >= a.fin && !CK.avisados['f'+i]){
         CK.avisados['f'+i] = true;
         ckBeep();
+        ckHablar('Ya está: '+a.texto);
         let t=document.getElementById('ckAviso');
         if(t){ t.style.display='block'; t.innerHTML = '🔔 <b>YA:</b> '+safeText(a.texto); }
       }
     });
+  }
+
+  // TODO TERMINADO: cuando el reloj pasa el total, todo está cocido → detener el reloj y mostrar "¡Listo!".
+  if(corriendo && m >= (CK.plan.total||0)){
+    if(CK.tick){ clearInterval(CK.tick); CK.tick=null; }
+    if(!CK.avisados['FIN']){ CK.avisados['FIN']=true; ckBeep(6); ckHablar('Listo. Tu comida está lista.'); }
+    z.innerHTML = `<div class="card" style="text-align:center;border:3px solid var(--g);background:#f2fbf5;padding:26px 18px">
+      <div style="font-size:60px;line-height:1">🎉</div>
+      <h2 style="margin:10px 0 4px;color:#0d6043">¡Listo! Tu comida está lista</h2>
+      <p class="muted" style="margin:0 0 14px">Tiempo total: ${ckMMSS(m)} · plan de ${CK.plan.total} min.</p>
+      <button onclick="ckParar()" style="background:#0d6043;color:#fff;border:0;border-radius:12px;padding:14px 24px;font-weight:900;font-size:16px">✓ Terminar</button>
+    </div>`;
+    return;
   }
 
   let paso = ps[CK.idx] || null;
@@ -9221,6 +9266,7 @@ function ckPintar(){
           <div style="height:100%;width:${corriendo?hechoPct:0}%;background:#fff;border-radius:999px"></div>
         </div>
       </div>
+      <button onclick="ckMute()" title="Silenciar / activar sonido y voz" style="background:#ffffff22;color:#fff;border:1px solid #ffffff44;border-radius:999px;padding:10px 12px;font-weight:900;font-size:17px">${CK.mudo?'🔇':'🔊'}</button>
       ${corriendo
         ? `<button onclick="ckParar()" style="background:#ffffff22;color:#fff;border:1px solid #ffffff66;border-radius:999px;padding:10px 14px;font-weight:900">■ Parar</button>`
         : `<button onclick="ckEmpezar()" style="background:#fff;color:#0d6043;border:0;border-radius:999px;padding:12px 18px;font-weight:900;font-size:16px">▶ Empezar</button>`}
@@ -9248,11 +9294,11 @@ function ckPintar(){
       ${pasoAyuda(paso.texto)}
       ${basesRender(paso.texto,'ck')}
       ${ingRenderDesglose(paso.texto)}
-    ` : `<div style="font-size:19px;font-weight:900">🎉 Ya acabaste todo lo tuyo</div>`}
+    ` : `<div style="font-size:19px;font-weight:900">🎉 Ya hiciste lo tuyo</div><div class="muted" style="font-size:14px;margin-top:4px">${corriendoAparatos.length?'Espera a que termine el horno 👇 (te aviso con sonido).':'¡Ya casi! En un momento estará listo.'}</div>`}
 
     <div style="display:flex;gap:8px;margin-top:14px">
       <button onclick="ckIr(-1)" ${CK.idx<=0?'disabled':''} style="flex:1;background:#fff;color:#0d6043;border:2px solid #9dd5b4;border-radius:12px;padding:14px;font-weight:900;font-size:15px;${CK.idx<=0?'opacity:.4':''}">← Atrás</button>
-      <button onclick="ckIr(1)" ${CK.idx>=ps.length-1?'disabled':''} style="flex:2;background:#0d6043;color:#fff;border:0;border-radius:12px;padding:14px;font-weight:900;font-size:16px;${CK.idx>=ps.length-1?'opacity:.4':''}">✓ Hecho, siguiente →</button>
+      ${CK.idx>=ps.length ? '' : `<button onclick="ckIr(1)" style="flex:2;background:#0d6043;color:#fff;border:0;border-radius:12px;padding:14px;font-weight:900;font-size:16px">${CK.idx>=ps.length-1?'✓ Terminé mis pasos':'✓ Hecho, siguiente →'}</button>`}
     </div>
   </div>
 
@@ -25125,7 +25171,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='1.145';
+    window.HM_APP_VERSION='1.146';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

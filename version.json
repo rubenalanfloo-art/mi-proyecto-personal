@@ -1,8 +1,20 @@
 {
-  "latest": "1.145",
+  "latest": "1.146",
   "date": "2026-07-18",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.146",
+      "date": "2026-07-18",
+      "type": "recomendada",
+      "nuevas": [
+        "Modo cocina mejorado: cuando termina TODO (incluido el horno), el reloj se detiene y aparece una pantalla de '¡Listo! Tu comida esta lista'.",
+        "Voz y sonido: la app te LEE cada paso en voz alta (manos libres) y te avisa con sonido cuando un aparato termina. Boton de silencio para apagar la voz.",
+        "Mas claro: cuando ya hiciste tus pasos, te dice 'espera a que termine el horno' y el ultimo paso ya se puede marcar como hecho."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.145",
       "date": "2026-07-18",
