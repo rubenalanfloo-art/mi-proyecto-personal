@@ -361,7 +361,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.149';
+  window.HM_APP_VERSION='1.150';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -464,7 +464,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
     </div>
     <div class="appStatusBox">
       <span id="regionChip" style="cursor:pointer;background:#eaf9f0;border:1px solid #9dd5b4;color:#0d6043;border-radius:999px;padding:4px 10px;font-weight:900;font-size:12px" onclick="abrirRegion()" title="Cambiar región">🌎</span>
-      <span class="versionChip">v1.149</span>
+      <span class="versionChip">v1.150</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -483,9 +483,9 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
   <button type="button" class="quick-toggle" title="Acceso rápido" onclick="toggleQuickRail()">⚡<span>Rápido</span></button>
   <div class="quick-rail-title">Acceso rápido</div>
   <div class="quick-rail-actions">
-    <button type="button" class="quick-nav-btn" title="Inicio" onclick="quickGo('🏠 Inicio')">⌂<span class="q-label">Inicio</span></button>
+    <button type="button" class="quick-nav-btn" title="Inicio" onclick="quickGo('🏠 Inicio')"><img src="assets/icons/inicio.png" alt="⌂" class="nav-icon" onerror="this.replaceWith(document.createTextNode(this.alt))"><span class="q-label">Inicio</span></button>
     <button type="button" class="quick-nav-btn" title="Comida" onclick="quickGo('🍱 Contador')">🍽<span class="q-label">Comida</span></button>
-    <button type="button" class="quick-nav-btn" title="Fitness" onclick="quickGo('💪 Ejercicio')">💪<span class="q-label">Fitness</span></button>
+    <button type="button" class="quick-nav-btn" title="Fitness" onclick="quickGo('💪 Ejercicio')"><img src="assets/icons/fitness.png" alt="💪" class="nav-icon" onerror="this.replaceWith(document.createTextNode(this.alt))"><span class="q-label">Fitness</span></button>
     <button type="button" class="quick-nav-btn" title="Empezar mi rutina de hoy" onclick="quickStartRoutine()">🏋️<span class="q-label">Rutina</span></button>
     <button type="button" class="quick-nav-btn" title="Gastos" onclick="quickGo('💳 Gastos')">💳<span class="q-label">Gastos</span></button>
     <button type="button" class="quick-nav-btn" title="Trabajo" onclick="quickGo('🧤 Trabajo')">🧤<span class="q-label">Trabajo</span></button>
@@ -806,7 +806,7 @@ function initNav(){
       background:${g.id=='inicio'?'#fff':'rgba(255,255,255,0.18)'};
       color:${g.id=='inicio'?'#15704f':'#fff'};
       box-shadow:${g.id=='inicio'?'0 2px 8px rgba(0,0,0,0.12)':'none'}"
-    >${grupoLabel(g)}</button>`
+    >${conIcono(g.label, grupoLabel(g), 'nav-icon')}</button>`
   ).join('');
   showGroup(groupAllowed(_activeGroup)?_activeGroup:'inicio',false);
 }
@@ -847,7 +847,7 @@ function showGroup(gid,shouldScroll=true){
         style="border:1.5px solid var(--b);border-radius:999px;padding:7px 14px;
         font-weight:800;font-size:13px;background:#fff;color:#3b4943;
         white-space:nowrap;cursor:pointer;transition:.15s"
-      >${tabLabel(t)}</button>`;
+      >${conIcono(t, tabLabel(t), 'nav-icon')}</button>`;
     }).join('');
     // Mostrar la pestaña de contenido (la del grupo si existe, si no la primera)
     let contentIdx = tabs.indexOf(contentTab);
@@ -18584,11 +18584,31 @@ function safeText(value){
 // ===== Sistema de iconos (emoji -> imagen cuando existan los PNG en assets/icons/) =====
 // APAGADO por defecto: devuelve el emoji igual que ahora. Cuando pongas los archivos,
 // cambia a  window.ICONOS_PNG = true  y usará las imágenes (con respaldo al emoji si falta alguna).
-window.ICONOS_PNG = false;
+window.ICONOS_PNG = true;
+// Iconos que YA existen en assets/icons/ (para no pedir imágenes que aún no subes → nada de 404 ni imágenes rotas).
+// Cada vez que subas más, agrega su nombre aquí.
+window.ICONOS_EXISTEN = {inicio:1,dinero:1,fitness:1,recetas:1,nevera:1,peso:1,casa:1,ahorro:1,caminata:1};
 function icono(nombre, emoji, clase){
-  if(!window.ICONOS_PNG || !nombre) return emoji||'';
+  if(!window.ICONOS_PNG || !nombre || !(window.ICONOS_EXISTEN && window.ICONOS_EXISTEN[nombre])) return emoji||'';
   var alt=String(emoji||'').replace(/"/g,'');
   return '<img src="assets/icons/'+nombre+'.png" alt="'+alt+'" class="'+(clase||'app-icon')+'" onerror="this.replaceWith(document.createTextNode(this.getAttribute(\'alt\')||\'\'))">';
+}
+// Mapa: etiqueta de grupo/pestaña (en español) -> nombre de archivo de icono.
+var ICON_MAP = {
+  '🏠 Inicio':'inicio','🍽️ Comer':'comer','💪 Fitness':'fitness','💳 Dinero':'dinero','🌴 Día a día':'dia-a-dia','⚙️ Ajustes':'ajustes',
+  '🎯 Metas':'metas','🍱 Contador':'contador','🍽️ Recetas':'recetas','🥗 Nevera':'nevera','🔧 Aparatos':'aparatos','🤖 Thermomix TM5':'thermomix',
+  '💪 Ejercicio':'ejercicio','🚶 Caminata':'caminata','⚖️ Peso':'peso','💳 Gastos':'gastos','💰 Presupuesto':'presupuesto','🛒 Precios':'precios',
+  '🌺 Ahorro':'ahorro','💸 Remesas':'remesas','🧤 Trabajo':'trabajo','🚗 Vehículos':'vehiculos','🏡 Casa':'casa','🗣️ Inglés':'ingles',
+  '👕 Ropa':'ropa','🧴 Piel':'piel','❤️ Ligar':'ligar','👤 Perfil':'perfil','🌎 Región':'region','📊 Base datos':'base-datos'
+};
+// Devuelve el texto a mostrar con el icono al inicio (o el emoji si no hay imagen). NO cambia onclick ni el texto.
+function conIcono(labelRaw, displayLabel, clase){
+  var file = ICON_MAP[labelRaw]||'';
+  var label = (displayLabel!=null?displayLabel:labelRaw);
+  if(!file) return label; // sin mapeo: se queda igual (emoji + texto)
+  var m = String(label).match(/^(\S+)\s+([\s\S]*)$/); // separa el emoji inicial del texto
+  var emoji = m?m[1]:'', texto = m?m[2]:label;
+  return icono(file, emoji, clase||'nav-icon') + (texto?(' '+texto):'');
 }
 
 function visualGuide(kind){
@@ -25295,7 +25315,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='1.149';
+    window.HM_APP_VERSION='1.150';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';
