@@ -1,8 +1,18 @@
 {
-  "latest": "1.141",
+  "latest": "1.142",
   "date": "2026-07-18",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.142",
+      "date": "2026-07-18",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [
+        "Cuando hay una actualizacion, ahora aparece una pantalla completa de 'Descargando actualizacion' que se baja e instala sola, en vez de un aviso pequeno."
+      ],
+      "errores": []
+    },
     {
       "version": "1.141",
       "date": "2026-07-18",
