@@ -361,7 +361,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 
 <script>
 (function(){
-  window.HM_APP_VERSION='1.146';
+  window.HM_APP_VERSION='1.147';
   window._hmRegistration=null;
   window.checkForAppUpdate=async function(){
     let status=document.getElementById('updateCheckStatus');
@@ -455,7 +455,7 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
     </div>
     <div class="appStatusBox">
       <span id="regionChip" style="cursor:pointer;background:#eaf9f0;border:1px solid #9dd5b4;color:#0d6043;border-radius:999px;padding:4px 10px;font-weight:900;font-size:12px" onclick="abrirRegion()" title="Cambiar región">🌎</span>
-      <span class="versionChip">v1.146</span>
+      <span class="versionChip">v1.147</span>
       <span id="syncBadge" class="localChip" style="cursor:pointer" title="Toca para sincronizar ahora" onclick="syncNow()">● Local</span>
     </div>
   </div>
@@ -9206,6 +9206,13 @@ function ckAjustar(min){
   CK.t0 -= min*60000;      // +1 min = adelantar el reloj
   ckPintar();
 }
+// Saltar la espera de un aparato (ej. el horno ya está caliente): adelanta el reloj hasta que ese aparato termina.
+function ckSaltarAparato(finMin){
+  if(!CK.t0) return;
+  let m = ckMinutos();
+  if(finMin > m){ CK.t0 -= (finMin - m)*60000; }
+  ckPintar();
+}
 
 function ckPintar(){
   let z = document.getElementById('ckPanel');
@@ -9303,18 +9310,20 @@ function ckPintar(){
   </div>
 
   ${corriendoAparatos.length?`<div class="card">
-    <div style="font-weight:900;font-size:13px;color:var(--m);margin-bottom:8px">🔥 CORRIENDO SOLO — tiempo real, no lo puedes brincar</div>
+    <div style="font-weight:900;font-size:13px;color:var(--m);margin-bottom:8px">🔥 CORRIENDO SOLO — corre su tiempo real. Si YA lo tienes listo, toca "Ya está".</div>
     ${corriendoAparatos.map(a=>{
       let falta=a.fin-m, pct=Math.round((m-a.inicio)/(a.fin-a.inicio)*100);
       let info=estacionInfo(a.estacion);
+      let esPrecal=/precalienta|precalentar/i.test(a.texto);
       return `<div style="padding:9px 0;border-top:1px solid #eef3ef">
-        <div style="display:flex;justify-content:space-between;gap:8px">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
           <b>${info.icono} ${safeText(a.texto)}</b>
           <span style="font-weight:900;color:var(--g);font-variant-numeric:tabular-nums;white-space:nowrap">${ckMMSS(falta)}</span>
         </div>
         <div style="height:6px;background:#e8f0ea;border-radius:999px;margin-top:6px;overflow:hidden">
           <div style="height:100%;width:${pct}%;background:var(--g);border-radius:999px"></div>
         </div>
+        <button onclick="ckSaltarAparato(${a.fin})" style="margin-top:8px;width:100%;background:#fff;color:#0d6043;border:2px solid #9dd5b4;border-radius:10px;padding:9px;font-weight:900;font-size:13px">⏭️ ${esPrecal?'Ya está caliente':'Ya está listo'} — saltar la espera</button>
       </div>`;
     }).join('')}
   </div>`:''}
@@ -9512,7 +9521,10 @@ function ingMisePlace(recetas){
     (r.steps||[]).forEach(p=>{
       ingBuscar(p).forEach(h=>{ if(h.min>0 || h.corte) todos[h.k] = h; });
     });
-    ingBuscar(r.ingredients||'').forEach(h=>{ todos[h.k] = h; });
+    // De la lista de ingredientes SOLO agregamos los que además se nombran en los pasos.
+    // Así no aparecen cosas (ej. verduras del "pico de gallo") que la receta no te dice picar.
+    let _pasosTxt=(r.steps||[]).join(' ').toLowerCase();
+    ingBuscar(r.ingredients||'').forEach(h=>{ if(_pasosTxt.includes(String(h.k).toLowerCase())) todos[h.k] = h; });
   });
   let lista = Object.values(todos).sort((a,b)=>a.orden-b.orden);
   if(!lista.length) return '';
@@ -9530,10 +9542,16 @@ function ingMisePlace(recetas){
         <div style="background:#e8f0ea;border-radius:8px;padding:5px 9px;font-size:12px;font-weight:900;white-space:nowrap">turno ${x.orden}</div>
       </div>`).join('')}
     </div>
-    <div class="mini" style="margin-top:10px;background:#fff8e6;border-color:#efc75e">
-      <b>El orden manda:</b> turno 1 entra primero (cebolla), turno 6 casi al final (ajo — se quema en 1 min).
-      Métele todo junto y o la papa queda cruda o el ajo amarga toda la comida.
-    </div>
+    ${(function(){
+      var pr=lista[0], ul=lista[lista.length-1];
+      if(!pr) return '';
+      var rapido=lista.filter(function(x){return x.nota;})[0]; // algo que se quema rápido (ajo, etc.), si lo hay
+      var txt='<b>El orden manda:</b> el '+safeText(pr.k)+' entra primero (turno '+pr.orden+')';
+      if(ul && ul.k!==pr.k) txt+=' y el '+safeText(ul.k)+' casi al final (turno '+ul.orden+')';
+      txt+='. Si metes todo junto, unas cosas quedan crudas y otras se queman.';
+      if(rapido && rapido.nota) txt+=' '+safeText(rapido.nota);
+      return '<div class="mini" style="margin-top:10px;background:#fff8e6;border-color:#efc75e">'+txt+'</div>';
+    })()}
   </div>`;
 }
 
@@ -25171,7 +25189,7 @@ tryLoadIDB();
 (function(){
   try{
     if(typeof state==='undefined') return;
-    window.HM_APP_VERSION='1.146';
+    window.HM_APP_VERSION='1.147';
     if(state.profile){
       state.profile.pasosDia = +(state.profile.pasosDia||0) || 22000;
       state.profile.sexo = state.profile.sexo || 'hombre';

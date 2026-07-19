@@ -1,8 +1,20 @@
 {
-  "latest": "1.146",
+  "latest": "1.147",
   "date": "2026-07-18",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.147",
+      "date": "2026-07-18",
+      "type": "recomendada",
+      "nuevas": [
+        "Modo cocina: si el horno YA esta caliente, ahora hay un boton para saltar la espera del precalentado (ya no te obliga a esperar)."
+      ],
+      "cambios": [
+        "Se arreglo el cartel de 'Pica TODO': ya solo lista ingredientes que la receta si menciona en los pasos (antes salian verduras del pico de gallo que la receta no te dice picar), y el aviso 'El orden manda' usa los ingredientes reales (ya no menciona papa/ajo cuando la receta no los tiene)."
+      ],
+      "errores": []
+    },
     {
       "version": "1.146",
       "date": "2026-07-18",
