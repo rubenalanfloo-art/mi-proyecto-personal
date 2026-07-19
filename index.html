@@ -443,6 +443,15 @@ body.mode-focus-personal .pro-only-hint{display:none}.section-focus-banner{backg
 })();
 </script>
 <script defer src="ex-fotos.js"></script>
+<style>
+/* ===== Sistema de iconos: mismas medidas para todos, se ven uniformes ===== */
+.app-icon,.nav-icon,.card-icon,.section-icon,.btn-icon{display:inline-block;object-fit:contain;vertical-align:middle}
+.app-icon{width:20px;height:20px}
+.nav-icon{width:26px;height:26px}
+.card-icon{width:40px;height:40px;border-radius:10px}
+.section-icon{width:32px;height:32px}
+.btn-icon{width:18px;height:18px;margin-right:6px}
+</style>
 </head>
 <body>
 <header class="appTop">
@@ -18571,6 +18580,15 @@ function generarRespuesta(){
 
 function safeText(value){
   return String(value||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+// ===== Sistema de iconos (emoji -> imagen cuando existan los PNG en assets/icons/) =====
+// APAGADO por defecto: devuelve el emoji igual que ahora. Cuando pongas los archivos,
+// cambia a  window.ICONOS_PNG = true  y usará las imágenes (con respaldo al emoji si falta alguna).
+window.ICONOS_PNG = false;
+function icono(nombre, emoji, clase){
+  if(!window.ICONOS_PNG || !nombre) return emoji||'';
+  var alt=String(emoji||'').replace(/"/g,'');
+  return '<img src="assets/icons/'+nombre+'.png" alt="'+alt+'" class="'+(clase||'app-icon')+'" onerror="this.replaceWith(document.createTextNode(this.getAttribute(\'alt\')||\'\'))">';
 }
 
 function visualGuide(kind){
