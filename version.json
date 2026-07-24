@@ -1,8 +1,18 @@
 {
-  "latest": "1.184",
-  "date": "2026-07-23",
+  "latest": "1.185",
+  "date": "2026-07-24",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.185",
+      "date": "2026-07-24",
+      "type": "recomendada",
+      "nuevas": [],
+      "cambios": [],
+      "errores": [
+        "Se arreglo el error 'tu sesion caduco' que salia al sincronizar en el telefono aunque volvieras a entrar. Causa: al renovar el token de sesion, si el telefono hacia varias peticiones a la vez, una usaba un token ya vencido y fallaba. Ahora la renovacion se comparte (una sola) y si el token es rechazado, la app lo renueva y reintenta sola. Tus datos nunca estuvieron en riesgo: seguian guardados en el telefono y en la nube."
+      ]
+    },
     {
       "version": "1.184",
       "date": "2026-07-23",
