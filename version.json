@@ -1,8 +1,18 @@
 {
-  "latest": "1.150",
-  "date": "2026-07-18",
+  "latest": "1.182",
+  "date": "2026-07-23",
   "minVersion": "1.0.0",
   "history": [
+    {
+      "version": "1.182",
+      "date": "2026-07-23",
+      "type": "recomendada",
+      "nuevas": [
+        "Actualizacion grande trabajada con Fable (v1.152 a v1.182): mejoras en comida y fitness, 945 recetas y armador de licuados."
+      ],
+      "cambios": [],
+      "errores": []
+    },
     {
       "version": "1.150",
       "date": "2026-07-18",
